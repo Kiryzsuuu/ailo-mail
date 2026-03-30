@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AILO WEB MAILER</title>
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="stylesheet" href="/print.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="nav">
+        <a class="brand" href="/">
+          <img class="brand-logo" src="/logo.png" alt="AILO" />
+          <div class="brand-text">
+            <div class="brand-title">Web Mailer</div>
+          </div>
+        </a>
+
+        <nav class="nav-links" aria-label="Navigasi">
+          <a href="/mailer">Mailer</a>
+          <a href="https://ailo.telkomuniversity.ac.id/#research" target="_blank" rel="noreferrer">Research</a>
+          <a href="https://ailo.telkomuniversity.ac.id/#projects" target="_blank" rel="noreferrer">Projects</a>
+          <a href="https://ailo.telkomuniversity.ac.id/#team" target="_blank" rel="noreferrer">Team</a>
+          <a href="https://ailo.telkomuniversity.ac.id/#about" target="_blank" rel="noreferrer">About</a>
+        </nav>
+
+        <a class="btn" href="/">Home</a>
+      </header>
+
+      <main class="page">
+        <h1 class="app-title">Generator Surat</h1>
+        <p class="muted">Isi form di bawah, lalu lihat preview dan download PDF.</p>
+
+        <form action="/preview" method="post" enctype="multipart/form-data">
+          <div class="grid">
+            <label>
+              Font Surat
+              <select name="font" id="fontSelect">
+                <option value="calibri" selected>Calibri</option>
+                <option value="arial">Arial</option>
+                <option value="times">Times New Roman</option>
+                <option value="georgia">Georgia</option>
+                <option value="tahoma">Tahoma</option>
+                <option value="verdana">Verdana</option>
+                <option value="trebuchet">Trebuchet MS</option>
+                <option value="garamond">Garamond</option>
+                <option value="courier">Courier New</option>
+                <option value="system">System UI</option>
+              </select>
+            </label>
+            <label class="span-2">
+              Font Lainnya (custom, opsional)
+              <input name="fontCustom" id="fontCustom" placeholder='Contoh: Cambria, "Times New Roman", serif' />
+            </label>
+            <label>
+              Upload Tanda Tangan (opsional)
+              <input type="file" name="signatureImage" accept="image/*" />
+            </label>
+            <label>
+              Upload QR (opsional)
+              <input type="file" name="qrImage" accept="image/*" />
+            </label>
+          </div>
+
+          <hr class="sep" />
+
+        <div class="grid">
+          <label>
+            Tempat
+            <input name="place" value="<%= defaults.place %>" />
+          </label>
+          <label>
+            Tanggal
+            <input type="date" name="date" value="<%= defaults.date %>" />
+          </label>
+          <label>
+            Nomor Surat
+            <input name="number" placeholder="Contoh: 001/AILO/III/2026" value="<%= defaults.number %>" />
+          </label>
+          <label>
+            Lampiran
+            <input name="attachment" value="<%= defaults.attachment %>" />
+          </label>
+          <label class="span-2">
+            Perihal
+            <input name="subject" placeholder="Contoh: Permohonan Data" value="<%= defaults.subject %>" />
+          </label>
+        </div>
+
+        <hr class="sep" />
+
+        <div class="grid">
+          <label class="span-2">
+            Penerima
+            <input name="recipient" placeholder="Contoh: Yth. Kepala ..." value="<%= defaults.recipient %>" />
+          </label>
+          <label class="span-2">
+            Alamat Penerima (opsional)
+            <textarea name="recipientAddress" rows="3" placeholder="Tulis alamat, satu baris per baris"><%= defaults.recipientAddress %></textarea>
+          </label>
+        </div>
+
+        <hr class="sep" />
+
+        <label>
+          Isi Surat
+          <textarea name="body" rows="10" placeholder="Tulis isi surat. Baris baru akan dipertahankan."><%= defaults.body %></textarea>
+        </label>
+
+        <div class="grid">
+          <label class="span-2">
+            Kalimat Penutup
+            <input name="closing" value="<%= defaults.closing %>" />
+          </label>
+          <label>
+            Nama Penandatangan
+            <input name="signatoryName" value="<%= defaults.signatoryName %>" />
+          </label>
+          <label>
+            Jabatan Penandatangan
+            <input name="signatoryTitle" value="<%= defaults.signatoryTitle %>" />
+          </label>
+        </div>
+
+          <div class="actions">
+            <button type="submit" class="btn">Preview Surat</button>
+          </div>
+        </form>
+
+        <script>
+          (function () {
+            var select = document.getElementById('fontSelect');
+            var custom = document.getElementById('fontCustom');
+            if (!select) return;
+
+            var stacks = {
+              calibri: 'Calibri, "Segoe UI", Arial, sans-serif',
+              arial: 'Arial, Helvetica, sans-serif',
+              times: '"Times New Roman", Times, serif',
+              georgia: 'Georgia, "Times New Roman", serif',
+              tahoma: 'Tahoma, "Segoe UI", Arial, sans-serif',
+              verdana: 'Verdana, "Segoe UI", Arial, sans-serif',
+              trebuchet: '"Trebuchet MS", "Segoe UI", Arial, sans-serif',
+              garamond: 'Garamond, "Times New Roman", serif',
+              courier: '"Courier New", Courier, monospace',
+              system: 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
+            };
+
+            function apply() {
+              var key = select.value;
+              var stack = stacks[key] || stacks.calibri;
+              var customValue = (custom && custom.value ? custom.value.trim() : '');
+              document.documentElement.style.setProperty('--uiFont', customValue || stack);
+            }
+
+            select.addEventListener('change', apply);
+            if (custom) custom.addEventListener('input', apply);
+            apply();
+          })();
+        </script>
+      </main>
+    </div>
+  </body>
+</html>

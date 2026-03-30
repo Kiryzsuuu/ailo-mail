@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AILO WEB MAILER</title>
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="stylesheet" href="/print.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="nav">
+        <a class="brand" href="/">
+          <img class="brand-logo" src="/logo.png" alt="AILO" />
+          <div class="brand-text">
+            <div class="brand-title">Web Mailer</div>
+          </div>
+        </a>
+
+        <nav class="nav-links" aria-label="Navigasi">
+          <a href="/mailer">Mailer</a>
+          <a href="https://ailo.telkomuniversity.ac.id/#research" target="_blank" rel="noreferrer">Research</a>
+          <a href="https://ailo.telkomuniversity.ac.id/#projects" target="_blank" rel="noreferrer">Projects</a>
+          <a href="https://ailo.telkomuniversity.ac.id/#team" target="_blank" rel="noreferrer">Team</a>
+          <a href="https://ailo.telkomuniversity.ac.id/#about" target="_blank" rel="noreferrer">About</a>
+        </nav>
+
+        <div class="nav-actions">
+          <a class="btn ghost" href="/mailer">Edit</a>
+          <a class="btn" href="/pdf/<%= previewId %>">Download</a>
+        </div>
+      </header>
+
+      <main class="page">
+        <div class="paper">
+          <%- html %>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

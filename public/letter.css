@@ -1,0 +1,124 @@
+:root {
+  --text: #111;
+  --muted: #4b4b4b;
+  --line: #111;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--letterFont, Calibri, "Segoe UI", Arial, sans-serif);
+  color: var(--text);
+  background: #fff;
+}
+
+.letter {
+  font-size: 12.5pt;
+  line-height: 1.55;
+}
+
+.kop {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.kop-logo {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+}
+
+.kop-logo-placeholder {
+  width: 90px;
+  height: 90px;
+  border: 1.5px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
+.kop-org1 { font-weight: 800; font-size: 18px; letter-spacing: 0.3px; }
+.kop-org2 { font-weight: 700; font-size: 14px; }
+.kop-aff { font-size: 12px; margin-top: 2px; }
+
+.kop-meta { font-size: 10.5px; color: #222; margin-top: 6px; }
+.kop-line { border-top: 2px solid var(--line); margin-top: 10px; }
+
+.sep-dot { margin: 0 8px; }
+
+.letter-head {
+  margin-top: 14px;
+}
+
+.letter-date { text-align: right; margin-bottom: 10px; }
+
+.letter-meta {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 420px;
+}
+
+.letter-meta td {
+  padding: 2px 0;
+  vertical-align: top;
+}
+
+.letter-meta .k { width: 90px; }
+
+.recipient {
+  margin-top: 18px;
+  margin-bottom: 18px;
+}
+
+.recipient-address { margin-top: 4px; }
+
+.content {
+  min-height: 260px;
+  text-align: justify;
+}
+
+.sign {
+  margin-top: 18px;
+  width: 45%;
+  margin-left: auto;
+}
+
+.sign-space { height: 72px; }
+
+.sign-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.sign-mark {
+  flex: 1;
+}
+
+.signature {
+  display: block;
+  max-width: 220px;
+  max-height: 90px;
+  object-fit: contain;
+  margin: 8px 0 6px;
+}
+
+.sign-qr {
+  width: 96px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+}
+
+.qr {
+  width: 86px;
+  height: 86px;
+  object-fit: contain;
+}

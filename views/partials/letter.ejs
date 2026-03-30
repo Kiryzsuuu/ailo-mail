@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Surat</title>
+    <style>
+      :root { --letterFont: <%- JSON.stringify(letterFontFamily || 'Calibri, "Segoe UI", Arial, sans-serif') %>; }
+      <%- css %>
+    </style>
+  </head>
+  <body>
+    <div class="letter">
+      <%- include('./kop', { kop }) %>
+
+      <div class="letter-head">
+        <div class="letter-date"><%= letter.place %>, <%= letter.formattedDate %></div>
+        <table class="letter-meta">
+          <tr>
+            <td class="k">Nomor</td>
+            <td class="v">: <%= letter.number || '-' %></td>
+          </tr>
+          <tr>
+            <td class="k">Lampiran</td>
+            <td class="v">: <%= letter.attachment || '-' %></td>
+          </tr>
+          <tr>
+            <td class="k">Perihal</td>
+            <td class="v">: <%= letter.subject || '-' %></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="recipient">
+        <div><strong><%= letter.recipient || 'Yth. ...' %></strong></div>
+        <% if (letter.recipientAddressHtml) { %>
+          <div class="recipient-address"><%- letter.recipientAddressHtml %></div>
+        <% } %>
+        <div>di Tempat</div>
+      </div>
+
+      <div class="content">
+        <%- letter.bodyHtml || '' %>
+      </div>
+
+      <div class="sign">
+        <div class="closing"><%= letter.closing || '' %></div>
+          <div class="sign-row">
+            <div class="sign-mark">
+              <% if (letter.signatureDataUrl) { %>
+                <img class="signature" src="<%= letter.signatureDataUrl %>" alt="Tanda tangan" />
+              <% } else { %>
+                <div class="sign-space"></div>
+              <% } %>
+              <div class="sign-name"><strong><%= letter.signatoryName || '' %></strong></div>
+              <div class="sign-title"><%= letter.signatoryTitle || '' %></div>
+            </div>
+
+            <% if (letter.qrDataUrl) { %>
+              <div class="sign-qr">
+                <img class="qr" src="<%= letter.qrDataUrl %>" alt="QR" />
+              </div>
+            <% } %>
+          </div>
+      </div>
+    </div>
+  </body>
+</html>

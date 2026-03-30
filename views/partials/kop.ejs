@@ -1,0 +1,28 @@
+<div class="kop">
+  <div class="kop-left">
+    <% if (kop.logoPath) { %>
+      <img class="kop-logo" src="<%= kop.logoPath %>" alt="Logo" />
+    <% } else { %>
+      <div class="kop-logo-placeholder">LOGO</div>
+    <% } %>
+  </div>
+  <div class="kop-right">
+    <div class="kop-org1"><%= kop.orgNameLine1 %></div>
+    <div class="kop-org2"><%= kop.orgNameLine2 %></div>
+    <div class="kop-aff"><%= kop.affiliationLine %></div>
+
+    <% if (kop.addressLines && kop.addressLines.length) { %>
+      <div class="kop-meta">
+        <% kop.addressLines.forEach(function(line) { %>
+          <div><%= line %></div>
+        <% }) %>
+      </div>
+    <% } %>
+
+    <div class="kop-meta">
+      <% if (kop.email) { %><span>Email: <%= kop.email %></span><% } %>
+      <% if (kop.website) { %><span class="sep-dot">•</span><span>Web: <%= kop.website %></span><% } %>
+    </div>
+  </div>
+</div>
+<div class="kop-line"></div>
