@@ -21,6 +21,10 @@ html, body {
   color: var(--text);
 }
 
+html {
+  font-size: 16px;
+}
+
 body {
   background-color: var(--bg);
   background-image:
@@ -68,7 +72,7 @@ code {
 }
 
 .brand-subtitle {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--muted);
 }
 
@@ -83,7 +87,7 @@ code {
 .nav-links a {
   text-decoration: none;
   color: rgba(11, 19, 32, 0.78);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
 }
 
@@ -103,11 +107,11 @@ code {
 
 .app-title {
   margin: 0 0 8px;
-  font-size: 22px;
+  font-size: 24px;
 }
 
 .muted { color: var(--muted); }
-.muted.small { font-size: 12px; }
+.muted.small { font-size: 13px; }
 
 .grid {
   display: grid;
@@ -118,7 +122,7 @@ code {
 label {
   display: grid;
   gap: 6px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 input, textarea, select {
@@ -126,9 +130,15 @@ input, textarea, select {
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 10px 12px;
-  font-size: 14px;
+  font-size: 15px;
+  font-family: inherit;
+  line-height: 1.4;
   background: #fff;
   color: var(--text);
+}
+
+button {
+  font-family: inherit;
 }
 
 input::placeholder, textarea::placeholder { color: rgba(11, 19, 32, 0.40); }
@@ -295,6 +305,101 @@ textarea { resize: vertical; }
 @media (max-width: 960px) {
   .hero-grid { grid-template-columns: 1fr; }
   .hero-title { font-size: 44px; }
+}
+
+@media (max-width: 720px) {
+  .shell {
+    padding: 16px 14px 44px;
+  }
+
+  .nav {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .brand-logo {
+    width: 38px;
+    height: 38px;
+  }
+
+  /* When there is a single button (e.g. Home) as a direct child of .nav */
+  .nav > .btn {
+    margin-left: auto;
+  }
+
+  .nav-links {
+    flex: 1 1 100%;
+    order: 3;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .nav-links a {
+    font-size: 14px;
+  }
+
+  .nav-actions {
+    flex: 1 1 100%;
+    order: 4;
+    justify-content: flex-end;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .span-2 {
+    grid-column: auto;
+  }
+
+  .actions {
+    justify-content: stretch;
+  }
+
+  .actions .btn {
+    width: 100%;
+  }
+
+  .paper {
+    padding: 14px;
+  }
+
+  .hero {
+    padding: 22px 0;
+  }
+
+  .hero-title {
+    font-size: 36px;
+  }
+
+  .hero-actions {
+    flex-wrap: wrap;
+  }
+
+  .mosaic {
+    grid-auto-rows: 120px;
+  }
+}
+
+@media (max-width: 420px) {
+  .shell {
+    padding: 14px 12px 40px;
+  }
+
+  .hero-title {
+    font-size: 30px;
+  }
+
+  .btn {
+    padding: 11px 14px;
+    border-radius: 14px;
+  }
+
+  input, textarea, select {
+    border-radius: 10px;
+  }
 }
 
 @media print {
