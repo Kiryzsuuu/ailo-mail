@@ -29,7 +29,7 @@
       </header>
 
       <main class="page">
-        <h1 class="app-title">Generator Surat</h1>
+        <h1 class="app-title">GENERATOR SURAT</h1>
         <p class="muted">Isi form di bawah, lalu lihat preview dan download PDF.</p>
 
         <form action="/preview" method="post" enctype="multipart/form-data">
@@ -55,11 +55,17 @@
             </label>
             <label>
               Upload Tanda Tangan (opsional)
-              <input type="file" name="signatureImage" accept="image/*" />
+              <label class="custom-file-upload">
+                <input type="file" name="signatureImage" accept="image/*" style="display:none" onchange="this.nextElementSibling.value = this.files[0]?.name || ''">
+                <input type="text" class="file-upload-text" placeholder="Pilih file..." readonly onclick="this.previousElementSibling.click()">
+              </label>
             </label>
             <label>
               Upload QR (opsional)
-              <input type="file" name="qrImage" accept="image/*" />
+              <label class="custom-file-upload">
+                <input type="file" name="qrImage" accept="image/*" style="display:none" onchange="this.nextElementSibling.value = this.files[0]?.name || ''">
+                <input type="text" class="file-upload-text" placeholder="Pilih file..." readonly onclick="this.previousElementSibling.click()">
+              </label>
             </label>
           </div>
 
