@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Verifikasi Tanda Tangan</title>
+    <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
+    <link rel="stylesheet" href="/print.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="nav">
+        <a class="brand" href="/">
+          <img class="brand-logo" src="/logo.png" alt="AILO" />
+          <div class="brand-text">
+            <div class="brand-title">Verifikasi</div>
+          </div>
+        </a>
+      </header>
+
+      <main class="page">
+        <h1 class="app-title">VERIFIKASI</h1>
+        <div class="paper">
+          <% if (!ok) { %>
+            <p><strong>Status:</strong> TIDAK VALID</p>
+            <p class="muted"><%= message %></p>
+          <% } else { %>
+            <p><strong>Status:</strong> VALID</p>
+            <p><strong>Nomor:</strong> <%= letter.number || '-' %></p>
+            <p><strong>Perihal:</strong> <%= letter.subject || '-' %></p>
+            <p><strong>Disetujui:</strong> <%= approvedAt %></p>
+          <% } %>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

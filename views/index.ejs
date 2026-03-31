@@ -25,14 +25,19 @@
           <a href="https://ailo.telkomuniversity.ac.id/#about" target="_blank" rel="noreferrer">About</a>
         </nav>
 
-        <a class="btn" href="/">Home</a>
+        <div class="nav-actions">
+          <a class="btn ghost" href="/dashboard">Dashboard</a>
+          <form class="inline" action="/logout" method="post">
+            <button class="btn" type="submit">Logout</button>
+          </form>
+        </div>
       </header>
 
       <main class="page">
         <h1 class="app-title">GENERATOR SURAT</h1>
         <p class="muted">Isi form di bawah, lalu lihat preview dan download PDF.</p>
 
-        <form action="/preview" method="post" enctype="multipart/form-data">
+        <form action="/letters/preview" method="post">
           <div class="grid">
             <label>
               Font Surat
@@ -52,20 +57,6 @@
             <label class="span-2">
               Font Lainnya (custom, opsional)
               <input name="fontCustom" id="fontCustom" placeholder='Contoh: Cambria, "Times New Roman", serif' />
-            </label>
-            <label>
-              Upload Tanda Tangan (opsional)
-              <label class="custom-file-upload">
-                <input type="file" name="signatureImage" accept="image/*" style="display:none" onchange="this.nextElementSibling.value = this.files[0]?.name || ''">
-                <input type="text" class="file-upload-text" placeholder="Pilih file..." readonly onclick="this.previousElementSibling.click()">
-              </label>
-            </label>
-            <label>
-              Upload QR (opsional)
-              <label class="custom-file-upload">
-                <input type="file" name="qrImage" accept="image/*" style="display:none" onchange="this.nextElementSibling.value = this.files[0]?.name || ''">
-                <input type="text" class="file-upload-text" placeholder="Pilih file..." readonly onclick="this.previousElementSibling.click()">
-              </label>
             </label>
           </div>
 

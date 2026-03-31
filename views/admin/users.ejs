@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Users - AILO WEB MAILER</title>
+    <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
+    <link rel="stylesheet" href="/print.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="nav">
+        <a class="brand" href="/dashboard">
+          <img class="brand-logo" src="/logo.png" alt="AILO" />
+          <div class="brand-text">
+            <div class="brand-title">Users</div>
+            <div class="brand-subtitle"><%= currentUser.email %> • <%= currentUser.role %></div>
+          </div>
+        </a>
+        <div class="nav-actions">
+          <a class="btn ghost" href="/dashboard">Dashboard</a>
+          <a class="btn" href="/admin/users/new">Tambah User</a>
+        </div>
+      </header>
+
+      <main class="page">
+        <h1 class="app-title">USERS</h1>
+        <p class="muted">Manage user dan role.</p>
+
+        <div class="paper">
+          <% if (error) { %>
+            <p class="muted"><strong><%= error %></strong></p>
+          <% } %>
+
+          <table style="width:100%; border-collapse:collapse">
+            <thead>
+              <tr>
+                <th style="text-align:left; padding:10px 8px; border-bottom:1px solid var(--line)">Email</th>
+                <th style="text-align:left; padding:10px 8px; border-bottom:1px solid var(--line)">Nama</th>
+                <th style="text-align:left; padding:10px 8px; border-bottom:1px solid var(--line)">Role</th>
+                <th style="text-align:left; padding:10px 8px; border-bottom:1px solid var(--line)">Ubah Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% users.forEach(function (u) { %>
+                <tr>
+                  <td style="padding:10px 8px; border-bottom:1px solid var(--line)"><%= u.email %></td>
+                  <td style="padding:10px 8px; border-bottom:1px solid var(--line)"><%= u.name || '-' %></td>
+                  <td style="padding:10px 8px; border-bottom:1px solid var(--line)"><%= u.role %></td>
+                  <td style="padding:10px 8px; border-bottom:1px solid var(--line)">
+                    <form action="/admin/users/<%= u._id %>/role" method="post" style="display:flex; gap:8px; align-items:center">
+                      <select name="role">
+                        <% roles.forEach(function (r) { %>
+                          <option value="<%= r %>" <%= r === u.role ? 'selected' : '' %>><%= r %></option>
+                        <% }) %>
+                      </select>
+                      <button class="btn" type="submit" style="padding:8px 12px; border-radius:12px">Simpan</button>
+                    </form>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

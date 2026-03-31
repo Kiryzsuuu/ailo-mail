@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Approval - AILO WEB MAILER</title>
+    <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
+    <link rel="stylesheet" href="/print.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="nav">
+        <a class="brand" href="/dashboard">
+          <img class="brand-logo" src="/logo.png" alt="AILO" />
+          <div class="brand-text">
+            <div class="brand-title">Approval</div>
+            <div class="brand-subtitle"><%= currentUser.email %> • <%= currentUser.role %></div>
+          </div>
+        </a>
+        <div class="nav-actions">
+          <a class="btn ghost" href="/dashboard">Dashboard</a>
+        </div>
+      </header>
+
+      <main class="page">
+        <h1 class="app-title">APPROVAL</h1>
+        <p class="muted">Surat yang menunggu ACC Supreme.</p>
+
+        <div class="paper">
+          <% if (!letters.length) { %>
+            <p class="muted">Tidak ada surat yang menunggu approval.</p>
+          <% } else { %>
+            <table style="width:100%; border-collapse:collapse">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding:10px 8px; border-bottom:1px solid var(--line)">Nomor</th>
+                  <th style="text-align:left; padding:10px 8px; border-bottom:1px solid var(--line)">Perihal</th>
+                  <th style="text-align:left; padding:10px 8px; border-bottom:1px solid var(--line)">Dibuat Oleh</th>
+                  <th style="text-align:left; padding:10px 8px; border-bottom:1px solid var(--line)">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% letters.forEach(function (l) { %>
+                  <tr>
+                    <td style="padding:10px 8px; border-bottom:1px solid var(--line)"><%= l.number || '-' %></td>
+                    <td style="padding:10px 8px; border-bottom:1px solid var(--line)"><%= l.subject || '-' %></td>
+                    <td style="padding:10px 8px; border-bottom:1px solid var(--line)"><%= l.createdByEmail || '-' %></td>
+                    <td style="padding:10px 8px; border-bottom:1px solid var(--line)">
+                      <a class="btn" href="/letters/<%= l._id %>/preview" style="padding:8px 12px; border-radius:12px">Review</a>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          <% } %>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

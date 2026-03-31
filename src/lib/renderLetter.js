@@ -26,8 +26,6 @@ function normalizeLetterInput(body) {
     closing: clean(body.closing),
     signatoryName: clean(body.signatoryName),
     signatoryTitle: clean(body.signatoryTitle),
-    signatureDataUrl: clean(body.signatureDataUrl),
-    qrDataUrl: clean(body.qrDataUrl),
   };
 }
 

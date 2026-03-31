@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Verifikasi OTP - AILO WEB MAILER</title>
+    <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
+    <link rel="stylesheet" href="/print.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="nav">
+        <a class="brand" href="/">
+          <img class="brand-logo" src="/logo.png" alt="AILO" />
+          <div class="brand-text">
+            <div class="brand-title">Web Mailer</div>
+          </div>
+        </a>
+
+        <div class="nav-actions">
+          <a class="btn ghost" href="/login">Login</a>
+          <a class="btn" href="/register">Register</a>
+        </div>
+      </header>
+
+      <main class="page">
+        <h1 class="app-title">VERIFIKASI OTP</h1>
+        <p class="muted">Masukkan kode OTP yang dikirim ke <strong><%= email %></strong>.</p>
+        <% if (error) { %>
+          <p class="muted"><strong><%= error %></strong></p>
+        <% } %>
+        <% if (info) { %>
+          <p class="muted"><%= info %></p>
+        <% } %>
+
+        <form action="/verify-otp" method="post">
+          <input type="hidden" name="email" value="<%= email %>" />
+          <input type="hidden" name="purpose" value="<%= purpose %>" />
+          <div class="grid">
+            <label class="span-2">
+              Kode OTP
+              <input name="code" autocomplete="one-time-code" required />
+            </label>
+          </div>
+          <div class="actions">
+            <button class="btn" type="submit">Verifikasi</button>
+          </div>
+        </form>
+      </main>
+    </div>
+  </body>
+</html>

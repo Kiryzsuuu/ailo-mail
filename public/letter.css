@@ -17,6 +17,7 @@ html, body {
 .letter {
   font-size: 12.5pt;
   line-height: 1.55;
+  position: relative;
 }
 
 .kop {
@@ -121,4 +122,12 @@ html, body {
   width: 86px;
   height: 86px;
   object-fit: contain;
+}
+
+.barcode {
+  position: absolute;
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
 }

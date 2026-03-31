@@ -6,14 +6,46 @@
     <title>AILO WEB MAILER</title>
     <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
     <link rel="stylesheet" href="/print.css" />
+    <style>
+      .paper { position: relative; }
+      .drag-barcode {
+        position: absolute;
+        width: 96px;
+        height: 96px;
+        left: var(--x, 80%);
+        top: var(--y, 86%);
+        transform: translate(-50%, -50%);
+        touch-action: none;
+        cursor: grab;
+        user-select: none;
+      }
+      .drag-barcode:active { cursor: grabbing; }
+      .drag-barcode img {
+        width: 96px;
+        height: 96px;
+        object-fit: contain;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.7);
+      }
+      .status-pill {
+        display: inline-flex;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        font-weight: 800;
+        font-size: 12px;
+      }
+    </style>
   </head>
   <body>
     <div class="shell">
       <header class="nav">
-        <a class="brand" href="/">
+        <a class="brand" href="/dashboard">
           <img class="brand-logo" src="/logo.png" alt="AILO" />
           <div class="brand-text">
             <div class="brand-title">Web Mailer</div>
+            <div class="brand-subtitle"><%= currentUser.email %> • <%= currentUser.role %></div>
           </div>
         </a>
 
@@ -26,16 +58,113 @@
         </nav>
 
         <div class="nav-actions">
-          <a class="btn ghost" href="/mailer">Edit</a>
-          <a class="btn" href="/pdf/<%= previewId %>">Download</a>
+          <a class="btn ghost" href="/mailer">Buat Surat Baru</a>
+          <a class="btn ghost" href="/dashboard">Dashboard</a>
+          <form class="inline" action="/logout" method="post">
+            <button class="btn" type="submit">Logout</button>
+          </form>
         </div>
       </header>
 
       <main class="page">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px">
+          <div>
+            <div class="muted">Status</div>
+            <div class="status-pill"><%= letter.status %></div>
+          </div>
+
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+            <% if (canSubmit) { %>
+              <form class="inline" action="/letters/<%= letter._id %>/submit" method="post">
+                <button class="btn" type="submit">Submit ke Supreme</button>
+              </form>
+            <% } %>
+
+            <% if (canMarkSent) { %>
+              <form class="inline" action="/letters/<%= letter._id %>/mark-sent" method="post">
+                <button class="btn ghost" type="submit">Tandai Terkirim</button>
+              </form>
+            <% } %>
+
+            <% if (canDownload) { %>
+              <a class="btn" href="/letters/<%= letter._id %>/pdf">Download PDF</a>
+            <% } %>
+          </div>
+        </div>
+
+        <% if (canApprove && showApprovePanel) { %>
+          <div class="paper" style="margin-bottom:14px">
+            <h3 style="margin:0 0 8px">Approve + Tanda Tangan (Barcode)</h3>
+            <p class="muted" style="margin:0 0 12px">Geser barcode di preview surat (di bawah) untuk menentukan posisi tanda tangan, lalu klik Approve.</p>
+            <form action="/letters/<%= letter._id %>/approve" method="post" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+              <input type="hidden" name="xPct" id="xPct" value="<%= letter.barcodePosition?.xPct ?? 80 %>" />
+              <input type="hidden" name="yPct" id="yPct" value="<%= letter.barcodePosition?.yPct ?? 86 %>" />
+              <button class="btn" type="submit">Approve & Sign</button>
+              <span class="muted small">(Posisi tersimpan otomatis dari drag)</span>
+            </form>
+          </div>
+        <% } %>
+
         <div class="paper">
           <%- html %>
+
+          <% if (canApprove && showApprovePanel) { %>
+            <div class="drag-barcode" id="dragBarcode" style="--x:<%= (letter.barcodePosition?.xPct ?? 80) %>%; --y:<%= (letter.barcodePosition?.yPct ?? 86) %>%">
+              <img src="<%= barcodePreviewDataUrl %>" alt="Barcode" />
+            </div>
+          <% } %>
         </div>
       </main>
     </div>
+
+    <% if (canApprove && showApprovePanel) { %>
+      <script>
+        (function () {
+          var el = document.getElementById('dragBarcode');
+          if (!el) return;
+
+          var xInput = document.getElementById('xPct');
+          var yInput = document.getElementById('yPct');
+
+          var paper = el.closest('.paper');
+          if (!paper) return;
+          var letterEl = paper.querySelector('.letter') || paper;
+
+          var dragging = false;
+
+          function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+          function setPosFromClient(clientX, clientY) {
+            var rect = letterEl.getBoundingClientRect();
+            var x = ((clientX - rect.left) / rect.width) * 100;
+            var y = ((clientY - rect.top) / rect.height) * 100;
+            x = clamp(x, 0, 100);
+            y = clamp(y, 0, 100);
+            el.style.setProperty('--x', x + '%');
+            el.style.setProperty('--y', y + '%');
+            if (xInput) xInput.value = String(Math.round(x * 100) / 100);
+            if (yInput) yInput.value = String(Math.round(y * 100) / 100);
+          }
+
+          el.addEventListener('pointerdown', function (ev) {
+            dragging = true;
+            try { el.setPointerCapture(ev.pointerId); } catch (e) {}
+            setPosFromClient(ev.clientX, ev.clientY);
+            ev.preventDefault();
+          });
+
+          el.addEventListener('pointermove', function (ev) {
+            if (!dragging) return;
+            setPosFromClient(ev.clientX, ev.clientY);
+            ev.preventDefault();
+          });
+
+          el.addEventListener('pointerup', function (ev) {
+            dragging = false;
+            ev.preventDefault();
+          });
+        })();
+      </script>
+    <% } %>
   </body>
 </html>

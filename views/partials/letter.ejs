@@ -47,22 +47,23 @@
         <div class="closing"><%= letter.closing || '' %></div>
           <div class="sign-row">
             <div class="sign-mark">
-              <% if (letter.signatureDataUrl) { %>
-                <img class="signature" src="<%= letter.signatureDataUrl %>" alt="Tanda tangan" />
-              <% } else { %>
-                <div class="sign-space"></div>
-              <% } %>
+              <div class="sign-space"></div>
               <div class="sign-name"><strong><%= letter.signatoryName || '' %></strong></div>
               <div class="sign-title"><%= letter.signatoryTitle || '' %></div>
             </div>
-
-            <% if (letter.qrDataUrl) { %>
-              <div class="sign-qr">
-                <img class="qr" src="<%= letter.qrDataUrl %>" alt="QR" />
-              </div>
-            <% } %>
           </div>
       </div>
+
+      <% if (letter.barcodeDataUrl) { %>
+        <% const x = Number(letter.barcodePosition?.xPct ?? 80); %>
+        <% const y = Number(letter.barcodePosition?.yPct ?? 86); %>
+        <img
+          class="barcode"
+          src="<%= letter.barcodeDataUrl %>"
+          alt="Tanda tangan (barcode)"
+          style="left:<%= isFinite(x) ? x : 80 %>%; top:<%= isFinite(y) ? y : 86 %>%"
+        />
+      <% } %>
     </div>
   </body>
 </html>
