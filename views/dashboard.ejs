@@ -11,7 +11,7 @@
     <div class="shell">
       <header class="nav">
         <a class="brand" href="/">
-          <img class="brand-logo" src="/logo.png" alt="AILO" />
+          <img class="brand-logo" src="/assets/logo-ailo.png" alt="AILO" />
           <div class="brand-text">
             <div class="brand-title">Web Mailer</div>
             <div class="brand-subtitle"><%= currentUser.email %> • <%= currentUser.role %></div>
@@ -25,6 +25,7 @@
           <% } %>
           <% if (canManageUsers) { %>
             <a href="/admin/users">Users</a>
+            <a href="/admin/logs">Logs</a>
           <% } %>
         </nav>
 

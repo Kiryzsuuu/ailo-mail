@@ -6,51 +6,60 @@
     <title>Register - AILO WEB MAILER</title>
     <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
     <link rel="stylesheet" href="/print.css" />
+    <link rel="stylesheet" href="/auth.css" />
   </head>
-  <body>
-    <div class="shell">
-      <header class="nav">
-        <a class="brand" href="/">
-          <img class="brand-logo" src="/logo.png" alt="AILO" />
-          <div class="brand-text">
-            <div class="brand-title">Web Mailer</div>
-          </div>
+  <body class="auth">
+    <div class="auth-shell">
+      <aside class="auth-aside">
+        <a class="auth-brand" href="/">
+          <img src="/assets/logo-ailo.png" alt="AILO" />
+          <strong>Web Mailer</strong>
         </a>
 
-        <div class="nav-actions">
-          <a class="btn ghost" href="/login">Login</a>
+        <div class="auth-hero">
+          <h1>
+            SIGN UP<br />
+            <span>START YOUR<br />JOURNEY</span>
+          </h1>
+          <p>Buat akun baru untuk mulai menggunakan Web Mailer.</p>
         </div>
-      </header>
 
-      <main class="page">
-        <h1 class="app-title">REGISTER</h1>
-        <% if (error) { %>
-          <p class="muted"><strong><%= error %></strong></p>
-        <% } %>
+        <div></div>
+      </aside>
 
-        <form action="/register" method="post">
-          <div class="grid">
-            <label class="span-2">
-              Nama (opsional)
-              <input name="name" />
-            </label>
-            <label class="span-2">
-              Email
-              <input name="email" type="email" autocomplete="username" required />
-            </label>
-            <label class="span-2">
-              Password
-              <input name="password" type="password" autocomplete="new-password" required />
-            </label>
+      <main class="auth-panel">
+        <div class="auth-card">
+          <h1 class="auth-title">SIGN UP</h1>
+          <p class="auth-subtitle">Daftar dengan email dan password (minimal 8 karakter).</p>
+
+          <% if (error) { %>
+            <div class="auth-alert" role="alert"><%= error %></div>
+          <% } %>
+
+          <form class="auth-form" action="/register" method="post">
+            <div class="auth-field">
+              <label for="name">Nama (opsional)</label>
+              <input id="name" name="name" type="text" autocomplete="name" placeholder="Nama kamu" />
+            </div>
+            <div class="auth-field">
+              <label for="email">Email address</label>
+              <input id="email" name="email" type="email" autocomplete="username" placeholder="yourname@gmail.com" required />
+            </div>
+            <div class="auth-field">
+              <label for="password">Password</label>
+              <input id="password" name="password" type="password" autocomplete="new-password" placeholder="••••••••" required />
+            </div>
+
+            <div class="auth-actions">
+              <button class="auth-btn" type="submit">Buat Akun</button>
+            </div>
+          </form>
+
+          <div class="auth-links">
+            <div>Sudah punya akun? <a href="/login">Login</a></div>
+            <div>Akun yang dibuat lewat register otomatis menjadi <strong>USER</strong>.</div>
           </div>
-          <div class="actions">
-            <button class="btn" type="submit">Buat Akun</button>
-          </div>
-        </form>
-
-        <p class="muted small" style="margin-top:12px">
-          Akun yang dibuat lewat register otomatis menjadi role <strong>USER</strong>.
-        </p>
+        </div>
       </main>
     </div>
   </body>

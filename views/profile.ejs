@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AILO WEB MAILER</title>
+    <title>Edit Profile - AILO WEB MAILER</title>
     <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
     <link rel="stylesheet" href="/print.css" />
   </head>
   <body>
-    <div class="shell">
+    <div class="shell shell--wide">
       <header class="nav nav--white">
         <a class="brand" href="/">
           <img class="brand-logo" src="/assets/logo-ailo.png" alt="AILO" />
@@ -17,15 +17,7 @@
           </div>
         </a>
 
-        <nav class="nav-links" aria-label="Navigasi">
-          <a href="/mailer">Mailer</a>
-          <a href="https://ailo.telkomuniversity.ac.id/#research" target="_blank" rel="noreferrer">Research</a>
-          <a href="https://ailo.telkomuniversity.ac.id/#projects" target="_blank" rel="noreferrer">Projects</a>
-          <a href="https://ailo.telkomuniversity.ac.id/#team" target="_blank" rel="noreferrer">Team</a>
-          <a href="https://ailo.telkomuniversity.ac.id/#about" target="_blank" rel="noreferrer">About</a>
-        </nav>
-
-        <div class="nav-actions">
+        <div class="nav-actions nav-actions--right">
           <% if (currentUser) { %>
             <div class="profile-dropdown">
               <button class="btn ghost" id="profileToggle" type="button">
@@ -173,49 +165,118 @@
             });
           }
         </script>
-
       </header>
 
       <main class="hero">
-        <div class="hero-container">
-          <!-- Hero Logo & Title Section -->
-          <div class="hero-content">
-            <img src="/assets/logo-ailo.png" alt="AILO Logo" class="hero-logo" />
-            <h1 class="hero-title">AI Laboratory<br/><span class="hero-teal">and Operations</span></h1>
-            <p class="hero-tagline">Kolaborasi untuk Inovasi</p>
-          </div>
+        <div class="hero-container hero-container--profile">
+          <section class="profile-page">
+            <div class="hero-eyebrow">Akun Saya</div>
+            <h1 class="hero-title">My <span class="hero-teal">Profile</span></h1>
+            <p class="hero-desc">Kelola data pribadi dan keamanan akun Anda.</p>
 
-          <!-- Feature Cards Grid -->
-          <div class="features-grid">
-            <a class="feature-card" href="/mailer">
-              <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="2" y="4" width="20" height="16" rx="2"/>
-                <path d="m22 6-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 6"/>
-              </svg>
-              <h3 class="feature-title">Buat Surat</h3>
-              <p class="feature-desc">Buat dan kelola surat dengan mudah menggunakan template profesional AILO</p>
-              <div class="feature-btn">Buat Surat</div>
-            </a>
-            <a class="feature-card" href="/approvals">
-              <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-              </svg>
-              <h3 class="feature-title">Beri Tanda Tangan</h3>
-              <p class="feature-desc">Tanda tangani dokumen dan surat dengan aman dan terpercaya</p>
-              <div class="feature-btn">Tandatangani</div>
-            </a>
-            <a class="feature-card" href="/dashboard">
-              <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-              </svg>
-              <h3 class="feature-title">Dashboard</h3>
-              <p class="feature-desc">Kelola semua surat, persetujuan, dan aktivitas Anda dari satu dashboard</p>
-              <div class="feature-btn">Buka Dashboard</div>
-            </a>
-          </div>
+            <div class="profile-card profile-card--full">
+              <div class="profile-head">
+                <div class="profile-card__avatar" aria-hidden="true">
+                  <img src="/assets/avatar-placeholder.svg" alt="" />
+                </div>
+                <div class="profile-card__meta">
+                  <div class="profile-card__name"><%= currentUser.name || 'Pengguna' %></div>
+                  <div class="profile-card__email"><%= currentUser.email %></div>
+                  <div class="profile-card__role"><%= String(currentUser.role || 'USER') %></div>
+                </div>
+              </div>
+
+              <% if (errors && errors.length > 0) { %>
+                <div class="alert alert-error">
+                  <strong>Periksa kembali:</strong>
+                  <ul>
+                    <% errors.forEach(err => { %>
+                      <li><%= err %></li>
+                    <% }); %>
+                  </ul>
+                </div>
+              <% } %>
+
+              <% if (success) { %>
+                <div class="alert alert-success">Profil berhasil diperbarui.</div>
+              <% } %>
+
+              <div class="profile-sections">
+                <section class="profile-section">
+                  <h2>Data Pribadi</h2>
+                  <p class="panel-desc">Update nama yang tampil di aplikasi.</p>
+                  <form action="/profile" method="post" class="panel-form">
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="name">Nama Lengkap</label>
+                        <input type="text" id="name" name="name" value="<%= currentUser.name || '' %>" placeholder="Masukkan nama Anda" required />
+                      </div>
+                    </div>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" value="<%= currentUser.email %>" disabled />
+                        <small>Email dapat diubah lewat menu Reset Email.</small>
+                      </div>
+                    </div>
+                    <div class="panel-actions">
+                      <button type="submit" class="btn btn-primary">Simpan Data</button>
+                    </div>
+                  </form>
+                </section>
+
+                <section class="profile-section">
+                  <h2>Reset Email</h2>
+                  <p class="panel-desc">Ubah email akun dengan verifikasi OTP ke email baru.</p>
+                  <form action="/profile/request-email-change" method="post" class="panel-form">
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="newEmail">Email Baru</label>
+                        <input type="email" id="newEmail" name="newEmail" placeholder="emailbaru@example.com" required />
+                      </div>
+                      <div class="form-group">
+                        <label for="emailPassword">Password Saat Ini</label>
+                        <input type="password" id="emailPassword" name="currentPassword" placeholder="Password saat ini" required />
+                      </div>
+                    </div>
+                    <div class="panel-actions">
+                      <button type="submit" class="btn btn-primary">Kirim OTP</button>
+                    </div>
+                  </form>
+                </section>
+
+                <section class="profile-section">
+                  <h2>Reset Password</h2>
+                  <p class="panel-desc">Ganti password dengan memasukkan password saat ini.</p>
+                  <form action="/profile/password" method="post" class="panel-form">
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="currentPassword">Password Saat Ini</label>
+                        <input type="password" id="currentPassword" name="currentPassword" placeholder="Password saat ini" required />
+                      </div>
+                      <div class="form-group">
+                        <label for="newPassword">Password Baru</label>
+                        <input type="password" id="newPassword" name="newPassword" placeholder="Minimal 8 karakter" required />
+                      </div>
+                    </div>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="confirmPassword">Konfirmasi Password Baru</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Ulangi password baru" required />
+                      </div>
+                    </div>
+                    <div class="panel-actions">
+                      <button type="submit" class="btn btn-primary">Update Password</button>
+                    </div>
+                  </form>
+                </section>
+              </div>
+
+              <div class="profile-bottom">
+                <a class="btn btn-success profile-back" href="/">Kembali</a>
+              </div>
+            </div>
+          </section>
         </div>
       </main>
 

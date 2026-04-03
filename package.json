@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon src/server.js",
+    "dev": "cross-env NODE_ENV=development DEBUG_ROUTES=1 LOG_HTTP=1 nodemon src/server.js",
     "start": "node src/server.js",
     "seed:superadmin": "node scripts/seed-superadmin.js",
     "test:e2e": "node scripts/e2e-smoke.js"
@@ -21,12 +21,14 @@
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "mongoose": "^9.3.3",
+    "morgan": "^1.10.1",
     "multer": "^2.1.1",
     "nodemailer": "^8.0.4",
     "puppeteer": "^24.40.0",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2"
   }

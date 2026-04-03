@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const PURPOSES = ['register', 'login', 'forgot'];
+const PURPOSES = ['register', 'login', 'forgot', 'change-email'];
 
 const otpCodeSchema = new mongoose.Schema(
   {

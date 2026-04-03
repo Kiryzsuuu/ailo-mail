@@ -6,46 +6,53 @@
     <title>Verifikasi OTP - AILO WEB MAILER</title>
     <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
     <link rel="stylesheet" href="/print.css" />
+    <link rel="stylesheet" href="/auth.css" />
   </head>
-  <body>
-    <div class="shell">
-      <header class="nav">
-        <a class="brand" href="/">
-          <img class="brand-logo" src="/logo.png" alt="AILO" />
-          <div class="brand-text">
-            <div class="brand-title">Web Mailer</div>
-          </div>
+  <body class="auth">
+    <div class="auth-shell">
+      <aside class="auth-aside">
+        <a class="auth-brand" href="/">
+          <img src="/assets/logo-ailo.png" alt="AILO" />
+          <strong>Web Mailer</strong>
         </a>
 
-        <div class="nav-actions">
-          <a class="btn ghost" href="/login">Login</a>
-          <a class="btn" href="/register">Register</a>
+        <div class="auth-hero">
+          <h1>
+            VERIFY<br />
+            <span>YOUR OTP</span>
+          </h1>
+          <p>Masukkan kode OTP yang telah dikirim ke email Anda untuk melanjutkan.</p>
         </div>
-      </header>
 
-      <main class="page">
-        <h1 class="app-title">VERIFIKASI OTP</h1>
-        <p class="muted">Masukkan kode OTP yang dikirim ke <strong><%= email %></strong>.</p>
+        <div></div>
+      </aside>
+
+      <main class="auth-panel">
+        <div class="auth-card">
+          <h1 class="auth-title">VERIFIKASI OTP</h1>
+          <p class="auth-subtitle">Kode OTP dikirim ke: <strong><%= email %></strong></p>
+
         <% if (error) { %>
-          <p class="muted"><strong><%= error %></strong></p>
+          <div class="auth-alert" role="alert"><%= error %></div>
         <% } %>
         <% if (info) { %>
-          <p class="muted"><%= info %></p>
+          <div class="auth-info" role="status"><%= info %></div>
         <% } %>
 
-        <form action="/verify-otp" method="post">
+        <form class="auth-form" action="/verify-otp" method="post">
           <input type="hidden" name="email" value="<%= email %>" />
           <input type="hidden" name="purpose" value="<%= purpose %>" />
-          <div class="grid">
-            <label class="span-2">
-              Kode OTP
-              <input name="code" autocomplete="one-time-code" required />
-            </label>
+          
+          <div class="auth-field">
+            <label for="code">Kode OTP</label>
+            <input id="code" name="code" type="text" autocomplete="one-time-code" placeholder="000000" required />
           </div>
-          <div class="actions">
-            <button class="btn" type="submit">Verifikasi</button>
+
+          <div class="auth-actions">
+            <button class="auth-btn" type="submit">Verifikasi</button>
           </div>
         </form>
+        </div>
       </main>
     </div>
   </body>

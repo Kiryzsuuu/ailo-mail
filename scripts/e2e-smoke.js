@@ -72,7 +72,7 @@ async function main() {
       .type('form')
       .send({ email: userEmail, purpose: 'register', code: registerOtp.code });
     assert(res.status === 302, 'Verify-otp (register) should redirect');
-    assert(String(res.headers.location || '').startsWith('/dashboard'), 'After OTP verify, user should go to dashboard');
+    assert(String(res.headers.location || '') === '/', 'After OTP verify, user should go to landing (/)');
 
     // 2) Dashboard accessible
     res = await agentUser.get('/dashboard');
@@ -191,10 +191,14 @@ async function main() {
   }
 }
 
-main().catch((err) => {
+main()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((err) => {
   // eslint-disable-next-line no-console
   console.error('E2E smoke test: FAILED');
   // eslint-disable-next-line no-console
   console.error(err);
   process.exit(1);
-});
+  });
