@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Upload Dokumen - AILO WEB MAILER</title>
+    <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
+    <link rel="stylesheet" href="/print.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="nav">
+        <a class="brand" href="/dashboard">
+          <img class="brand-logo" src="/logo.png" alt="AILO" />
+          <div class="brand-text">
+            <div class="brand-title">Web Mailer</div>
+            <div class="brand-subtitle"><%= currentUser.email %> • <%= currentUser.role %></div>
+          </div>
+        </a>
+
+        <nav class="nav-links" aria-label="Navigasi">
+          <a href="/mailer">Mailer</a>
+          <a href="/dashboard">Dashboard</a>
+        </nav>
+
+        <div class="nav-actions">
+          <form class="inline" action="/logout" method="post">
+            <button class="btn ghost" type="submit">Logout</button>
+          </form>
+        </div>
+      </header>
+
+      <main class="page">
+        <h1 class="app-title">UPLOAD DOKUMEN (PDF) UNTUK E-SIGN</h1>
+        <p class="muted">Upload dokumen PDF, lalu submit ke Supreme untuk ditandatangani (QR).</p>
+
+        <% if (error) { %>
+          <div class="paper" style="border:1px solid rgba(180,0,0,0.25); background:rgba(255,0,0,0.04); margin-bottom:12px">
+            <strong>Perhatian:</strong> <%= error %>
+          </div>
+        <% } %>
+
+        <div class="paper">
+          <form action="/upload" method="post" enctype="multipart/form-data" style="display:grid; gap:12px">
+            <label style="display:grid; gap:6px">
+              <span style="font-weight:800">Nomor Surat (opsional)</span>
+              <input class="input" name="number" placeholder="Contoh: 001/ABC/2026" />
+            </label>
+
+            <label style="display:grid; gap:6px">
+              <span style="font-weight:800">Perihal (opsional)</span>
+              <input class="input" name="subject" placeholder="Contoh: Permohonan Tanda Tangan" />
+            </label>
+
+            <label style="display:grid; gap:6px">
+              <span style="font-weight:800">File PDF</span>
+              <input class="input" type="file" name="document" accept="application/pdf,.pdf" required />
+              <span class="muted small">Maksimum 15MB. Saat ini hanya PDF yang didukung.</span>
+            </label>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap">
+              <a class="btn ghost" href="/dashboard">Batal</a>
+              <button class="btn" type="submit">Upload</button>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

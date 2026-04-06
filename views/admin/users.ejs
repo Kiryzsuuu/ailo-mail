@@ -39,6 +39,7 @@
                 <th style="text-align:left; padding:10px 8px; border-bottom:1px solid var(--line)">Email</th>
                 <th style="text-align:left; padding:10px 8px; border-bottom:1px solid var(--line)">Nama</th>
                 <th style="text-align:left; padding:10px 8px; border-bottom:1px solid var(--line)">Role</th>
+                <th style="text-align:left; padding:10px 8px; border-bottom:1px solid var(--line)">Tier Supreme</th>
                 <th style="text-align:left; padding:10px 8px; border-bottom:1px solid var(--line)">Ubah Role</th>
               </tr>
             </thead>
@@ -48,6 +49,19 @@
                   <td style="padding:10px 8px; border-bottom:1px solid var(--line)"><%= u.email %></td>
                   <td style="padding:10px 8px; border-bottom:1px solid var(--line)"><%= u.name || '-' %></td>
                   <td style="padding:10px 8px; border-bottom:1px solid var(--line)"><%= u.role %></td>
+                  <td style="padding:10px 8px; border-bottom:1px solid var(--line)">
+                    <% if (String(u.role || '').toUpperCase() === 'SUPREME') { %>
+                      <form action="/admin/users/<%= u._id %>/supreme-tier" method="post" style="display:flex; gap:8px; align-items:center">
+                        <select name="supremeTier">
+                          <option value="1" <%= Number(u.supremeTier || 1) === 1 ? 'selected' : '' %>>Tier 1</option>
+                          <option value="2" <%= Number(u.supremeTier || 1) === 2 ? 'selected' : '' %>>Tier 2</option>
+                        </select>
+                        <button class="btn ghost" type="submit" style="padding:8px 12px; border-radius:12px">Simpan</button>
+                      </form>
+                    <% } else { %>
+                      <span class="muted">-</span>
+                    <% } %>
+                  </td>
                   <td style="padding:10px 8px; border-bottom:1px solid var(--line)">
                     <form action="/admin/users/<%= u._id %>/role" method="post" style="display:flex; gap:8px; align-items:center">
                       <select name="role">

@@ -5,7 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Surat</title>
     <style>
-      :root { --letterFont: <%- JSON.stringify(letterFontFamily || 'Calibri, "Segoe UI", Arial, sans-serif') %>; }
+      :root {
+        --letterFont: <%- JSON.stringify(letterFontFamily || 'Calibri, "Segoe UI", Arial, sans-serif') %>;
+        --letterFontSize: <%= Number(letter.fontSizePt || 12) %>pt;
+        --letterLineHeight: <%= Number(letter.lineHeight || 1.55) %>;
+        --letterParagraphGap: <%= Number(letter.paragraphSpacingPt || 0) %>pt;
+        --letterSectionGap: <%= Number(letter.sectionSpacingPt || 0) %>pt;
+      }
       <%- css %>
     </style>
   </head>
@@ -54,7 +60,20 @@
           </div>
       </div>
 
-      <% if (letter.barcodeDataUrl) { %>
+      <% if (Array.isArray(letter.signatures) && letter.signatures.length > 0) { %>
+        <% for (const s of letter.signatures) { %>
+          <% if (!s || !s.barcodeDataUrl) continue; %>
+          <% const x = Number(s.barcodePosition?.xPct ?? 80); %>
+          <% const y = Number(s.barcodePosition?.yPct ?? 86); %>
+          <img
+            class="barcode"
+            data-signature-id="<%= s.signatureId %>"
+            src="<%= s.barcodeDataUrl %>"
+            alt="Tanda tangan (barcode)"
+            style="left:<%= isFinite(x) ? x : 80 %>%; top:<%= isFinite(y) ? y : 86 %>%"
+          />
+        <% } %>
+      <% } else if (letter.barcodeDataUrl) { %>
         <% const x = Number(letter.barcodePosition?.xPct ?? 80); %>
         <% const y = Number(letter.barcodePosition?.yPct ?? 86); %>
         <img
@@ -64,6 +83,21 @@
           style="left:<%= isFinite(x) ? x : 80 %>%; top:<%= isFinite(y) ? y : 86 %>%"
         />
       <% } %>
+
+      <div class="telkom-footer">
+        <div class="telkom-footer-text">
+          <% const lines = (kop && Array.isArray(kop.footerLines) && kop.footerLines.length) ? kop.footerLines : []; %>
+          <% if (lines.length) { %>
+            <% lines.forEach(function (line) { %>
+              <div><%= line %></div>
+            <% }) %>
+          <% } %>
+        </div>
+        <% const webRaw = (kop && kop.website) ? String(kop.website) : 'https://www.telkomuniversity.ac.id'; %>
+        <% const webLabel = webRaw.replace(/^https?:\/\//, ''); %>
+        <div class="telkom-footer-web"><a href="<%= webRaw %>" target="_blank" rel="noreferrer noopener"><%= webLabel %></a></div>
+        <div class="telkom-footer-band" aria-hidden="true"></div>
+      </div>
     </div>
   </body>
 </html>

@@ -20,6 +20,9 @@
 
         <nav class="nav-links" aria-label="Navigasi">
           <a href="/mailer">Buat Surat</a>
+          <% if (String(currentUser.role || '').toUpperCase() === 'USER') { %>
+            <a href="/upload">Upload Dokumen</a>
+          <% } %>
           <% if (canApprove) { %>
             <a href="/approvals">Approval</a>
           <% } %>

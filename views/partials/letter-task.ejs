@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Surat Tugas</title>
+    <style>
+      :root {
+        --letterFont: <%- JSON.stringify(letterFontFamily || 'Calibri, "Segoe UI", Arial, sans-serif') %>;
+        --letterFontSize: <%= Number(letter.fontSizePt || 12) %>pt;
+        --letterLineHeight: <%= Number(letter.lineHeight || 1.55) %>;
+        --letterParagraphGap: <%= Number(letter.paragraphSpacingPt || 0) %>pt;
+        --letterSectionGap: <%= Number(letter.sectionSpacingPt || 0) %>pt;
+      }
+      <%- css %>
+
+      .doc-title {
+        text-align: center;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        margin-top: 8px;
+        margin-bottom: 2px;
+        text-decoration: underline;
+      }
+      .doc-number {
+        text-align: center;
+        margin: 0 0 14px;
+        font-size: 12.5pt;
+      }
+
+      .st-meta {
+        margin: 10px 0 10px;
+      }
+      .kv {
+        border-collapse: collapse;
+      }
+      .kv td {
+        padding: 2px 0;
+        vertical-align: top;
+      }
+      .kv .k { width: 90px; }
+      .kv .sep { width: 14px; text-align: center; }
+
+      .st-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 10px 0 12px;
+        font-size: 12pt;
+      }
+
+
+      .footer {
+        margin-top: 14px;
+        font-size: 9.5pt;
+        color: #111;
+      }
+      .footer-line {
+        border-top: 1px solid rgba(17,17,17,0.45);
+        margin-top: 16px;
+        padding-top: 8px;
+      }
+
+      .sign {
+        width: 42%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="letter">
+      <%- include('./kop', { kop }) %>
+
+      <div class="doc-title"><%= (letter.tableConfig && letter.tableConfig.title) ? letter.tableConfig.title : 'SURAT TUGAS' %></div>
+      <div class="doc-number"><%= (letter.tableConfig && letter.tableConfig.numberLabel) ? letter.tableConfig.numberLabel : 'Nomor' %>: <%= letter.number || '-' %></div>
+
+      <div class="content" style="min-height:unset">
+        <%- letter.bodyHtml || '' %>
+      </div>
+
+      <div class="st-meta">
+        <table class="kv">
+          <tr>
+            <td class="k">Nama</td><td class="sep">:</td><td><%= letter.signatoryName || '' %></td>
+          </tr>
+          <% if (letter.signatoryNip) { %>
+            <tr>
+              <td class="k">NIP</td><td class="sep">:</td><td><%= letter.signatoryNip %></td>
+            </tr>
+          <% } %>
+          <tr>
+            <td class="k">Jabatan</td><td class="sep">:</td><td><%= letter.signatoryTitle || '' %></td>
+          </tr>
+        </table>
+      </div>
+
+      <% if (letter.tableConfig && Array.isArray(letter.tableConfig.columns) && letter.tableConfig.columns.length && Array.isArray(letter.tableRows) && letter.tableRows.length) { %>
+        <div style="margin-top:4px">Dengan ini memberikan tugas kepada:</div>
+        <table class="st-table">
+          <thead>
+            <tr>
+              <% letter.tableConfig.columns.forEach(function (c) { %>
+                <th><%= c %></th>
+              <% }) %>
+            </tr>
+          </thead>
+          <tbody>
+            <% letter.tableRows.forEach(function (row) { %>
+              <tr>
+                <% letter.tableConfig.columns.forEach(function (c) { %>
+                  <td style="text-align:<%= c === 'No' ? 'center' : 'left' %>"><%= row[c] || '' %></td>
+                <% }) %>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+
+      <% if (Array.isArray(letter.detailsRows) && letter.detailsRows.length) { %>
+        <div>Yang akan diselenggarakan pada:</div>
+        <table class="kv" style="margin-top:6px">
+          <% letter.detailsRows.forEach(function (it) { %>
+            <tr>
+              <td class="k"><%= it.k %></td><td class="sep">:</td><td><%= it.v %></td>
+            </tr>
+          <% }) %>
+        </table>
+      <% } %>
+
+      <div style="margin-top:14px"><%= letter.closing || '' %></div>
+
+      <div class="sign" style="margin-left:auto">
+        <div style="text-align:left"><%= letter.place %>, <%= letter.formattedDate %></div>
+        <div class="sign-space"></div>
+        <div><strong><%= letter.signatoryName || '' %></strong></div>
+        <% if (letter.signatoryNip) { %>
+          <div style="margin-top:2px">NIP. <%= letter.signatoryNip %></div>
+        <% } %>
+      </div>
+
+      <% if (Array.isArray(letter.signatures) && letter.signatures.length > 0) { %>
+        <% for (const s of letter.signatures) { %>
+          <% if (!s || !s.barcodeDataUrl) continue; %>
+          <% const x = Number(s.barcodePosition?.xPct ?? 80); %>
+          <% const y = Number(s.barcodePosition?.yPct ?? 86); %>
+          <img
+            class="barcode"
+            data-signature-id="<%= s.signatureId %>"
+            src="<%= s.barcodeDataUrl %>"
+            alt="Tanda tangan (barcode)"
+            style="left:<%= isFinite(x) ? x : 80 %>%; top:<%= isFinite(y) ? y : 86 %>%"
+          />
+        <% } %>
+      <% } else if (letter.barcodeDataUrl) { %>
+        <% const x = Number(letter.barcodePosition?.xPct ?? 80); %>
+        <% const y = Number(letter.barcodePosition?.yPct ?? 86); %>
+        <img
+          class="barcode"
+          src="<%= letter.barcodeDataUrl %>"
+          alt="Tanda tangan (barcode)"
+          style="left:<%= isFinite(x) ? x : 80 %>%; top:<%= isFinite(y) ? y : 86 %>%"
+        />
+      <% } %>
+
+      <div class="telkom-footer">
+        <div class="telkom-footer-text">
+          <% const lines = (kop && Array.isArray(kop.footerLines) && kop.footerLines.length) ? kop.footerLines : []; %>
+          <% if (lines.length) { %>
+            <% lines.forEach(function (line) { %>
+              <div><%= line %></div>
+            <% }) %>
+          <% } %>
+        </div>
+        <% const webRaw = (kop && kop.website) ? String(kop.website) : 'https://www.telkomuniversity.ac.id'; %>
+        <% const webLabel = webRaw.replace(/^https?:\/\//, ''); %>
+        <div class="telkom-footer-web"><a href="<%= webRaw %>" target="_blank" rel="noreferrer noopener"><%= webLabel %></a></div>
+        <div class="telkom-footer-band" aria-hidden="true"></div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -29,6 +29,9 @@
             <p><strong>Nomor:</strong> <%= letter.number || '-' %></p>
             <p><strong>Perihal:</strong> <%= letter.subject || '-' %></p>
             <p><strong>Disetujui:</strong> <%= approvedAt %></p>
+            <% if (signedBy) { %>
+              <p><strong>Ditandatangani oleh:</strong> <%= signedBy %></p>
+            <% } %>
           <% } %>
         </div>
       </main>

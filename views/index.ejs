@@ -39,24 +39,52 @@
 
         <form action="/letters/preview" method="post">
           <div class="grid">
+            <label class="span-2">
+              Jenis Surat
+              <select name="template" id="templateSelect">
+                <option value="DEFAULT" <%= (defaults.template || 'DEFAULT') === 'DEFAULT' ? 'selected' : '' %>>Surat (Default)</option>
+                <option value="SURAT_TUGAS" <%= defaults.template === 'SURAT_TUGAS' ? 'selected' : '' %>>Surat Tugas</option>
+                <option value="SURAT_TUGAS_PANDUAN" <%= defaults.template === 'SURAT_TUGAS_PANDUAN' ? 'selected' : '' %>>Surat Tugas Panduan</option>
+                <option value="SURAT_TUGAS_TENAGA_AHLI" <%= defaults.template === 'SURAT_TUGAS_TENAGA_AHLI' ? 'selected' : '' %>>Surat Tugas Tenaga Ahli</option>
+                <option value="SURAT_TUGAS_UNDANGAN" <%= defaults.template === 'SURAT_TUGAS_UNDANGAN' ? 'selected' : '' %>>Surat Tugas Undangan</option>
+                <option value="SURAT_TUGAS_IN_HOUSE_TRAINING" <%= defaults.template === 'SURAT_TUGAS_IN_HOUSE_TRAINING' ? 'selected' : '' %>>Surat Tugas In-House Training</option>
+              </select>
+            </label>
             <label>
               Font Surat
               <select name="font" id="fontSelect">
-                <option value="calibri" selected>Calibri</option>
-                <option value="arial">Arial</option>
-                <option value="times">Times New Roman</option>
-                <option value="georgia">Georgia</option>
-                <option value="tahoma">Tahoma</option>
-                <option value="verdana">Verdana</option>
-                <option value="trebuchet">Trebuchet MS</option>
-                <option value="garamond">Garamond</option>
-                <option value="courier">Courier New</option>
-                <option value="system">System UI</option>
+                <option value="calibri" <%= (defaults.font || 'calibri') === 'calibri' ? 'selected' : '' %>>Calibri</option>
+                <option value="arial" <%= defaults.font === 'arial' ? 'selected' : '' %>>Arial</option>
+                <option value="times" <%= defaults.font === 'times' ? 'selected' : '' %>>Times New Roman</option>
+                <option value="georgia" <%= defaults.font === 'georgia' ? 'selected' : '' %>>Georgia</option>
+                <option value="tahoma" <%= defaults.font === 'tahoma' ? 'selected' : '' %>>Tahoma</option>
+                <option value="verdana" <%= defaults.font === 'verdana' ? 'selected' : '' %>>Verdana</option>
+                <option value="trebuchet" <%= defaults.font === 'trebuchet' ? 'selected' : '' %>>Trebuchet MS</option>
+                <option value="garamond" <%= defaults.font === 'garamond' ? 'selected' : '' %>>Garamond</option>
+                <option value="courier" <%= defaults.font === 'courier' ? 'selected' : '' %>>Courier New</option>
+                <option value="system" <%= defaults.font === 'system' ? 'selected' : '' %>>System UI</option>
               </select>
             </label>
             <label class="span-2">
               Font Lainnya (custom, opsional)
               <input name="fontCustom" id="fontCustom" placeholder='Contoh: Cambria, "Times New Roman", serif' />
+            </label>
+
+            <label>
+              Ukuran Font (pt)
+              <input type="number" name="fontSizePt" min="8" max="24" step="0.5" value="<%= defaults.fontSizePt || 12 %>" />
+            </label>
+            <label>
+              Line Spacing
+              <input type="number" name="lineHeight" min="1" max="2.2" step="0.05" value="<%= defaults.lineHeight || 1.55 %>" />
+            </label>
+            <label>
+              Paragraph Spacing (pt)
+              <input type="number" name="paragraphSpacingPt" min="0" max="24" step="1" value="<%= defaults.paragraphSpacingPt || 0 %>" />
+            </label>
+            <label>
+              Section Spacing (pt)
+              <input type="number" name="sectionSpacingPt" min="0" max="48" step="1" value="<%= defaults.sectionSpacingPt || 0 %>" />
             </label>
           </div>
 
@@ -94,7 +122,23 @@
           </label>
           <label class="span-2">
             Alamat Penerima (opsional)
-            <textarea name="recipientAddress" rows="3" placeholder="Tulis alamat, satu baris per baris"><%= defaults.recipientAddress %></textarea>
+            <div class="paper" style="padding:12px; border-radius:12px">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px">
+                <div class="muted small">Bisa bold/italic/underline, list, dan sisip foto.</div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap">
+                  <button class="btn ghost" type="button" data-rt-cmd="bold" style="height:40px; padding:0 14px; min-width:auto">Bold</button>
+                  <button class="btn ghost" type="button" data-rt-cmd="italic" style="height:40px; padding:0 14px; min-width:auto">Italic</button>
+                  <button class="btn ghost" type="button" data-rt-cmd="underline" style="height:40px; padding:0 14px; min-width:auto">Underline</button>
+                  <button class="btn ghost" type="button" data-rt-cmd="insertUnorderedList" style="height:40px; padding:0 14px; min-width:auto">• List</button>
+                  <button class="btn ghost" type="button" data-rt-img="recipient" style="height:40px; padding:0 14px; min-width:auto">+ Foto</button>
+                </div>
+              </div>
+
+              <div contenteditable="true" id="recipientEditor" style="min-height:92px; outline:none"><%- (defaults.recipientAddressHtml || '') %></div>
+
+              <textarea class="hidden-field" name="recipientAddress" id="recipientAddress"><%= defaults.recipientAddress %></textarea>
+              <textarea class="hidden-field" name="recipientAddressHtml" id="recipientAddressHtml"><%= defaults.recipientAddressHtml || '' %></textarea>
+            </div>
           </label>
         </div>
 
@@ -102,8 +146,56 @@
 
         <label>
           Isi Surat
-          <textarea name="body" rows="10" placeholder="Tulis isi surat. Baris baru akan dipertahankan."><%= defaults.body %></textarea>
+          <div class="paper" style="padding:12px; border-radius:12px">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px">
+              <div class="muted small">Gunakan toolbar untuk bold/italic/underline, list, dan sisip foto.</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap">
+                <button class="btn ghost" type="button" data-rt-cmd="bold" style="height:40px; padding:0 14px; min-width:auto">Bold</button>
+                <button class="btn ghost" type="button" data-rt-cmd="italic" style="height:40px; padding:0 14px; min-width:auto">Italic</button>
+                <button class="btn ghost" type="button" data-rt-cmd="underline" style="height:40px; padding:0 14px; min-width:auto">Underline</button>
+                <button class="btn ghost" type="button" data-rt-cmd="insertUnorderedList" style="height:40px; padding:0 14px; min-width:auto">• List</button>
+                <button class="btn ghost" type="button" data-rt-img="body" style="height:40px; padding:0 14px; min-width:auto">+ Foto</button>
+              </div>
+            </div>
+
+            <div contenteditable="true" id="bodyEditor" style="min-height:260px; outline:none"><%- (defaults.bodyHtml || '') %></div>
+
+            <textarea class="hidden-field" name="body" id="body"><%= defaults.body %></textarea>
+            <textarea class="hidden-field" name="bodyHtml" id="bodyHtml"><%= defaults.bodyHtml || '' %></textarea>
+          </div>
         </label>
+
+        <div id="taskExtras" style="display:none">
+          <hr class="sep" />
+          <div class="grid">
+            <label>
+              NIP Penandatangan (opsional)
+              <input name="signatoryNip" value="<%= defaults.signatoryNip || '' %>" />
+            </label>
+            <label class="span-2">
+              Data Tabel
+              <div class="paper" style="padding:12px; border-radius:12px">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px">
+                  <div class="muted small" id="tableHint">Klik + untuk menambah baris.</div>
+                  <button class="btn ghost" type="button" id="addRowBtn" style="height:40px; padding:0 14px; min-width:auto">+ Baris</button>
+                </div>
+
+                <div style="overflow:auto">
+                  <table style="width:100%; border-collapse:collapse" id="tableEditor">
+                    <thead id="tableHead"></thead>
+                    <tbody id="tableBody"></tbody>
+                  </table>
+                </div>
+
+                <textarea class="hidden-field" name="tableRowsRaw" id="tableRowsRaw"><%= defaults.tableRowsRaw || '' %></textarea>
+              </div>
+            </label>
+            <label class="span-2">
+              Detail Acara (opsional, format: Kunci: Nilai per baris)
+              <textarea name="detailsRaw" rows="6" placeholder="Hari, tanggal: Kamis, 8 Mei 2025\nWaktu: 09.00 WIB s.d selesai\nMedia: Ruang Rapat ...\nAcara: Focus Group Discussion ..."><%= defaults.detailsRaw || '' %></textarea>
+            </label>
+          </div>
+        </div>
 
         <div class="grid">
           <label class="span-2">
@@ -129,6 +221,8 @@
           (function () {
             var select = document.getElementById('fontSelect');
             var custom = document.getElementById('fontCustom');
+            var templateSelect = document.getElementById('templateSelect');
+            var taskExtras = document.getElementById('taskExtras');
             if (!select) return;
 
             var stacks = {
@@ -151,9 +245,209 @@
               document.documentElement.style.setProperty('--uiFont', customValue || stack);
             }
 
+            function applyTemplate() {
+              if (!templateSelect || !taskExtras) return;
+              var t = String(templateSelect.value || 'DEFAULT').toUpperCase();
+              var isTask = t !== 'DEFAULT';
+              taskExtras.style.display = isTask ? 'block' : 'none';
+
+              if (isTask) {
+                buildTableForTemplate(t);
+              }
+            }
+
+            function columnsForTemplate(t) {
+              if (t === 'SURAT_TUGAS') return ['Nama', 'NIM'];
+              if (t === 'SURAT_TUGAS_IN_HOUSE_TRAINING') return ['Nama', 'Fakultas'];
+              return ['Nama', 'NIP', 'Fakultas'];
+            }
+
+            function buildTableForTemplate(t) {
+              var head = document.getElementById('tableHead');
+              var body = document.getElementById('tableBody');
+              var raw = document.getElementById('tableRowsRaw');
+              var addBtn = document.getElementById('addRowBtn');
+              var hint = document.getElementById('tableHint');
+              if (!head || !body || !raw || !addBtn) return;
+
+              var cols = columnsForTemplate(t);
+              hint.textContent = 'Kolom: ' + cols.join(', ') + '. Klik + untuk menambah baris.';
+
+              function esc(s) { return String(s || '').replace(/[&<>\"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]); }); }
+
+              function renderHead() {
+                var ths = '<th style="text-align:center; padding:8px; border-bottom:1px solid var(--line); width:56px">No</th>';
+                for (var i = 0; i < cols.length; i++) {
+                  ths += '<th style="text-align:left; padding:8px; border-bottom:1px solid var(--line)">' + esc(cols[i]) + '</th>';
+                }
+                ths += '<th style="text-align:left; padding:8px; border-bottom:1px solid var(--line); width:86px">Aksi</th>';
+                head.innerHTML = '<tr>' + ths + '</tr>';
+              }
+
+              function serialize() {
+                var rows = Array.prototype.slice.call(body.querySelectorAll('tr'));
+                var lines = [];
+                for (var r = 0; r < rows.length; r++) {
+                  var inputs = rows[r].querySelectorAll('input[data-col]');
+                  var parts = [];
+                  for (var j = 0; j < inputs.length; j++) {
+                    parts.push(String(inputs[j].value || '').trim());
+                  }
+                  if (parts.some(function (p) { return p; })) {
+                    lines.push(parts.join('|'));
+                  }
+                }
+                raw.value = lines.join('\n');
+              }
+
+              function renumber() {
+                var nums = body.querySelectorAll('[data-no]');
+                for (var i = 0; i < nums.length; i++) {
+                  nums[i].textContent = String(i + 1);
+                }
+              }
+
+              function addRow(values) {
+                values = Array.isArray(values) ? values : [];
+                var tds = '<td data-no style="text-align:center; padding:8px; border-bottom:1px solid var(--line)"></td>';
+                for (var i = 0; i < cols.length; i++) {
+                  var v = values[i] != null ? String(values[i]) : '';
+                  tds += '<td style="padding:6px 8px; border-bottom:1px solid var(--line)">' +
+                    '<input data-col="' + esc(cols[i]) + '" value="' + esc(v) + '" style="border-radius:10px; padding:8px 10px" />' +
+                    '</td>';
+                }
+                tds += '<td style="padding:6px 8px; border-bottom:1px solid var(--line)">' +
+                  '<button class="btn ghost" type="button" data-del style="height:36px; padding:0 12px; min-width:auto">Hapus</button>' +
+                  '</td>';
+
+                var tr = document.createElement('tr');
+                tr.innerHTML = tds;
+
+                tr.addEventListener('input', function () { serialize(); });
+                tr.querySelector('[data-del]').addEventListener('click', function () {
+                  tr.remove();
+                  renumber();
+                  serialize();
+                });
+
+                body.appendChild(tr);
+                renumber();
+                serialize();
+              }
+
+              function parseExistingRaw() {
+                var text = String(raw.value || '').trim();
+                if (!text) return [];
+                return text.split(/\r\n|\n|\r/).map(function (l) {
+                  return l.split('|').map(function (p) { return String(p || '').trim(); });
+                }).filter(function (parts) { return parts.some(function (p) { return p; }); });
+              }
+
+              // Rebuild editor whenever template changes
+              renderHead();
+              body.innerHTML = '';
+
+              var existing = parseExistingRaw();
+              if (existing.length) {
+                for (var i = 0; i < existing.length; i++) {
+                  addRow(existing[i].slice(0, cols.length));
+                }
+              } else {
+                addRow([]);
+              }
+
+              addBtn.onclick = function () { addRow([]); };
+            }
+
             select.addEventListener('change', apply);
             if (custom) custom.addEventListener('input', apply);
+            if (templateSelect) templateSelect.addEventListener('change', applyTemplate);
             apply();
+            applyTemplate();
+
+            function exec(cmd) {
+              try { document.execCommand(cmd, false, null); } catch (e) { /* ignore */ }
+            }
+
+            function insertImage(target) {
+              var editor = target === 'recipient' ? document.getElementById('recipientEditor') : document.getElementById('bodyEditor');
+              if (!editor) return;
+
+              var input = document.createElement('input');
+              input.type = 'file';
+              input.accept = 'image/*';
+              input.onchange = function () {
+                var file = input.files && input.files[0];
+                if (!file) return;
+                var reader = new FileReader();
+                reader.onload = function () {
+                  var src = String(reader.result || '');
+                  editor.focus();
+                  try {
+                    document.execCommand('insertHTML', false, '<img alt="" src="' + src.replace(/"/g, '&quot;') + '" style="max-width:100%; height:auto" />');
+                  } catch (e) {
+                    var img = document.createElement('img');
+                    img.src = src;
+                    img.alt = '';
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    editor.appendChild(img);
+                  }
+                };
+                reader.readAsDataURL(file);
+              };
+              input.click();
+            }
+
+            function syncEditors() {
+              var bodyEditor = document.getElementById('bodyEditor');
+              var bodyHtml = document.getElementById('bodyHtml');
+              var bodyPlain = document.getElementById('body');
+              if (bodyEditor && bodyHtml && bodyPlain) {
+                bodyHtml.value = bodyEditor.innerHTML;
+                bodyPlain.value = bodyEditor.innerText;
+              }
+
+              var recEditor = document.getElementById('recipientEditor');
+              var recHtml = document.getElementById('recipientAddressHtml');
+              var recPlain = document.getElementById('recipientAddress');
+              if (recEditor && recHtml && recPlain) {
+                recHtml.value = recEditor.innerHTML;
+                recPlain.value = recEditor.innerText;
+              }
+            }
+
+            document.addEventListener('click', function (e) {
+              var btn = e.target && e.target.closest ? e.target.closest('button') : null;
+              if (!btn) return;
+
+              var cmd = btn.getAttribute('data-rt-cmd');
+              if (cmd) {
+                e.preventDefault();
+                exec(cmd);
+                syncEditors();
+              }
+
+              var imgTarget = btn.getAttribute('data-rt-img');
+              if (imgTarget) {
+                e.preventDefault();
+                insertImage(imgTarget);
+                setTimeout(syncEditors, 0);
+              }
+            });
+
+            var form = document.querySelector('form[action="/letters/preview"]');
+            if (form) {
+              form.addEventListener('submit', function () {
+                syncEditors();
+              });
+            }
+
+            var bodyEditor = document.getElementById('bodyEditor');
+            if (bodyEditor) bodyEditor.addEventListener('input', syncEditors);
+            var recipientEditor = document.getElementById('recipientEditor');
+            if (recipientEditor) recipientEditor.addEventListener('input', syncEditors);
+            syncEditors();
           })();
         </script>
       </main>

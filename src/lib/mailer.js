@@ -123,6 +123,14 @@ function buildOtpEmailHtml({ code, purpose }) {
 function getTransport() {
   if (cachedTransport) return cachedTransport;
 
+  const disableEmail =
+    String(process.env.DISABLE_EMAIL || '').trim() === '1' ||
+    String(process.env.NODE_ENV || '').trim().toLowerCase() === 'test';
+  if (disableEmail) {
+    cachedTransport = null;
+    return null;
+  }
+
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT || '587');
   const secure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';

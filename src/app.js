@@ -2,11 +2,13 @@ const path = require('path');
 const fs = require('fs');
 const express = require('express');
 const morgan = require('morgan');
+const multer = require('multer');
 const session = require('express-session');
 const ConnectMongo = require('connect-mongo');
 const { getKopConfig } = require('./lib/kopConfig');
 const { renderLetterHtml, normalizeLetterInput } = require('./lib/renderLetter');
 const { generatePdfBuffer } = require('./lib/pdf');
+const { stampPdfWithQrs } = require('./lib/stampPdf');
 const User = require('./models/User');
 const Letter = require('./models/Letter');
 const { hashPassword, verifyPassword } = require('./lib/security');
@@ -22,11 +24,40 @@ const {
   roleRank,
 } = require('./middleware/auth');
 const { signToken, verifyToken, qrDataUrl, getBaseUrl } = require('./lib/signature');
+const crypto = require('crypto');
 const { createOtp, verifyOtp } = require('./lib/otp');
 const { sendOtpEmail } = require('./lib/mailer');
 const { logActivity, actorFromUser } = require('./lib/activityLog');
 
 const app = express();
+
+const uploadsRoot = path.join(__dirname, '..', '..', 'uploads');
+const letterUploadsRoot = path.join(uploadsRoot, 'letters');
+try {
+  fs.mkdirSync(letterUploadsRoot, { recursive: true });
+} catch (e) {
+  // ignore
+}
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, letterUploadsRoot),
+    filename: (req, file, cb) => {
+      const ext = path.extname(String(file.originalname || '')).toLowerCase() || '.pdf';
+      cb(null, `${crypto.randomUUID()}${ext}`);
+    },
+  }),
+  limits: {
+    fileSize: 15 * 1024 * 1024,
+  },
+  fileFilter: (req, file, cb) => {
+    const mime = String(file.mimetype || '').toLowerCase();
+    const name = String(file.originalname || '').toLowerCase();
+    const isPdf = mime === 'application/pdf' || name.endsWith('.pdf');
+    if (!isPdf) return cb(new Error('Hanya file PDF yang didukung.'), false);
+    return cb(null, true);
+  },
+});
 
 const shouldLogHttp =
   String(process.env.LOG_HTTP || '').trim() === '1' ||
@@ -746,8 +777,13 @@ app.get('/mailer', requireAuth, async (req, res, next) => {
     res.render('index', {
       kop,
       defaults: {
+        template: 'DEFAULT',
         font: 'calibri',
         fontCustom: '',
+        fontSizePt: 12,
+        lineHeight: 1.55,
+        paragraphSpacingPt: 0,
+        sectionSpacingPt: 0,
         place: 'Bandung',
         date: new Date().toISOString().slice(0, 10),
         number: '',
@@ -755,13 +791,80 @@ app.get('/mailer', requireAuth, async (req, res, next) => {
         subject: '',
         recipient: '',
         recipientAddress: '',
+        recipientAddressHtml: '',
         body: '',
+        bodyHtml: '',
         closing: 'Hormat kami,',
         signatoryName: '',
         signatoryTitle: '',
+        signatoryNip: '',
+        tableRowsRaw: '',
+        detailsRaw: '',
       },
     });
   } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/upload', requireAuth, async (req, res, next) => {
+  try {
+    const currentUser = res.locals.currentUser;
+    if (String(currentUser.role || '').toUpperCase() !== 'USER') {
+      return res.status(403).send('Forbidden');
+    }
+    return res.render('upload', { currentUser, error: '' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/upload', requireAuth, upload.single('document'), async (req, res, next) => {
+  try {
+    const currentUser = res.locals.currentUser;
+    if (String(currentUser.role || '').toUpperCase() !== 'USER') {
+      return res.status(403).send('Forbidden');
+    }
+
+    const file = req.file;
+    if (!file) {
+      return res.status(400).render('upload', { currentUser, error: 'File wajib di-upload (PDF).' });
+    }
+
+    const number = String(req.body.number || '').trim();
+    const subject = String(req.body.subject || '').trim() || String(file.originalname || '').trim();
+
+    const created = await Letter.create({
+      createdBy: currentUser._id,
+      status: 'DRAFT',
+      kind: 'UPLOAD',
+      number,
+      subject,
+      upload: {
+        storagePath: String(file.path || ''),
+        originalName: String(file.originalname || ''),
+        mimeType: String(file.mimetype || ''),
+        size: Number(file.size || 0),
+      },
+    });
+
+    await logActivity({
+      req,
+      actor: actorFromUser(currentUser),
+      action: 'letter.upload_created',
+      statusCode: 302,
+      targetLetterId: created._id,
+      meta: { originalName: String(file.originalname || ''), size: Number(file.size || 0) },
+    });
+
+    return res.redirect(`/letters/${created._id}/preview`);
+  } catch (error) {
+    // Multer fileFilter errors come here
+    const currentUser = res.locals.currentUser;
+    const message = String(error?.message || 'Upload gagal.');
+    if (currentUser && String(currentUser.role || '').toUpperCase() === 'USER') {
+      return res.status(400).render('upload', { currentUser, error: message });
+    }
     next(error);
   }
 });
@@ -800,6 +903,13 @@ app.post('/letters/:id/submit', requireAuth, async (req, res, next) => {
     if (String(letter.createdBy) !== String(currentUser._id)) return res.status(403).send('Forbidden');
     if (letter.status !== 'DRAFT') return res.redirect(`/letters/${letter._id}/preview`);
 
+    const requested = Array.isArray(letter.requestedSigners) ? letter.requestedSigners : [];
+    // Backwards-compatible default: if no specific Supreme requested, allow submit and require 1 signature from any Supreme.
+    if (requested.length === 0) {
+      letter.requiredSupremeSignatures = 1;
+      letter.requestedSignersSetAt = new Date();
+    }
+
     letter.status = 'SUBMITTED';
     letter.submittedAt = new Date();
     await letter.save();
@@ -825,8 +935,23 @@ app.post('/letters/:id/approve', requireRole(['SUPREME', 'SUPERADMIN']), async (
     const letter = await Letter.findById(req.params.id);
     if (!letter) return res.status(404).send('Surat tidak ditemukan.');
 
-    if (letter.status !== 'SUBMITTED' && letter.status !== 'DRAFT') {
+    const canSignDraftAsSupremeCreator =
+      letter.status === 'DRAFT' &&
+      roleRank(currentUser.role) >= roleRank('SUPREME') &&
+      String(letter.createdBy) === String(currentUser._id);
+
+    const canSignSubmitted = letter.status === 'SUBMITTED';
+    const canAddSignatureToApproved = letter.status === 'APPROVED';
+
+    if (!canSignSubmitted && !canSignDraftAsSupremeCreator && !canAddSignatureToApproved) {
       return res.redirect(`/letters/${letter._id}/preview`);
+    }
+
+    // Any SUPREME can sign/approve letters. `requestedSigners` is informational only.
+    const requested = Array.isArray(letter.requestedSigners) ? letter.requestedSigners : [];
+
+    if (Array.isArray(letter.signatures) && letter.signatures.some((s) => String(s.signerId) === String(currentUser._id))) {
+      return res.redirect(`/letters/${letter._id}/preview?err=${encodeURIComponent('Anda sudah menandatangani surat ini.')}`);
     }
 
     const xPctRaw = Number(req.body.xPct);
@@ -835,9 +960,13 @@ app.post('/letters/:id/approve', requireRole(['SUPREME', 'SUPERADMIN']), async (
     const yPct = Number.isFinite(yPctRaw) ? Math.max(0, Math.min(100, yPctRaw)) : 86;
 
     const approvedAt = new Date();
+    const signatureId = crypto.randomUUID();
     const token = signToken(
       {
         letterId: String(letter._id),
+        signatureId,
+        approvedById: String(currentUser._id),
+        approvedByEmail: String(currentUser.email || ''),
         approvedAt: approvedAt.toISOString(),
         number: letter.number || '',
         subject: letter.subject || '',
@@ -845,11 +974,32 @@ app.post('/letters/:id/approve', requireRole(['SUPREME', 'SUPERADMIN']), async (
       signatureSecret || 'dev-signature-secret'
     );
 
-    letter.status = 'APPROVED';
-    letter.approvedAt = approvedAt;
-    letter.approvedBy = currentUser._id;
+    // Keep legacy fields updated with the latest signature for backward compatibility
     letter.signatureToken = token;
     letter.barcodePosition = { xPct, yPct };
+
+    if (!Array.isArray(letter.signatures)) letter.signatures = [];
+    letter.signatures.push({
+      signatureId,
+      signerId: currentUser._id,
+      signerEmail: String(currentUser.email || ''),
+      signedAt: approvedAt,
+      token,
+      barcodePosition: { xPct, yPct },
+    });
+
+    const requiredCountRaw = Number(letter.requiredSupremeSignatures);
+    const requiredCount = Number.isFinite(requiredCountRaw) && requiredCountRaw > 0
+      ? Math.floor(requiredCountRaw)
+      : (requested.length > 0 ? requested.length : 1);
+
+    const signedCount = (letter.signatures || []).length;
+
+    if (letter.status !== 'APPROVED' && signedCount >= requiredCount) {
+      letter.status = 'APPROVED';
+      letter.approvedAt = approvedAt;
+      letter.approvedBy = currentUser._id;
+    }
     await letter.save();
 
     await logActivity({
@@ -862,6 +1012,96 @@ app.post('/letters/:id/approve', requireRole(['SUPREME', 'SUPERADMIN']), async (
     });
 
     return res.redirect(`/letters/${letter._id}/preview`);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/letters/:id/request-signers', requireAuth, async (req, res, next) => {
+  try {
+    const currentUser = res.locals.currentUser;
+    const letter = await Letter.findById(req.params.id);
+    if (!letter) return res.status(404).send('Surat tidak ditemukan.');
+    if (String(letter.createdBy) !== String(currentUser._id)) return res.status(403).send('Forbidden');
+    if (!(letter.status === 'DRAFT' || letter.status === 'SUBMITTED')) {
+      return res.redirect(`/letters/${letter._id}/preview`);
+    }
+
+    const rawIds = req.body.signerIds;
+    const ids = Array.isArray(rawIds)
+      ? rawIds
+      : (rawIds ? [rawIds] : []);
+    const cleanIds = ids.map((v) => String(v || '').trim()).filter(Boolean);
+
+    const supremeUsers = await User.find({ role: 'SUPREME', _id: { $in: cleanIds } })
+      .select('_id email supremeTier')
+      .lean();
+
+    letter.requestedSigners = supremeUsers.map((u) => ({
+      userId: u._id,
+      email: String(u.email || ''),
+      tier: Number(u.supremeTier || 1),
+    }));
+    letter.requiredSupremeSignatures = letter.requestedSigners.length;
+    letter.requestedSignersSetAt = new Date();
+    await letter.save();
+
+    return res.redirect(`/letters/${letter._id}/preview`);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post('/letters/:id/barcode-position', requireRole(['SUPREME', 'SUPERADMIN']), async (req, res, next) => {
+  try {
+    const currentUser = res.locals.currentUser;
+    const letter = await Letter.findById(req.params.id);
+    if (!letter) return res.status(404).json({ ok: false, error: 'Surat tidak ditemukan.' });
+
+    if (letter.status !== 'APPROVED' || !letter.signatureToken) {
+      return res.status(400).json({ ok: false, error: 'Surat belum di-approve.' });
+    }
+
+    const signatureId = String(req.body.signatureId || '').trim();
+    if (!signatureId) {
+      return res.status(400).json({ ok: false, error: 'signatureId wajib.' });
+    }
+
+    const isSuperAdmin = String(currentUser.role).toUpperCase() === 'SUPERADMIN';
+    const sigIndex = Array.isArray(letter.signatures)
+      ? letter.signatures.findIndex((s) => String(s.signatureId) === signatureId)
+      : -1;
+    if (sigIndex < 0) {
+      return res.status(404).json({ ok: false, error: 'Signature tidak ditemukan.' });
+    }
+
+    const sig = letter.signatures[sigIndex];
+    const isSigner = sig.signerId && String(sig.signerId) === String(currentUser._id);
+    if (!isSuperAdmin && !isSigner) return res.status(403).json({ ok: false, error: 'Forbidden' });
+
+    const xPctRaw = Number(req.body.xPct);
+    const yPctRaw = Number(req.body.yPct);
+    const xPct = Number.isFinite(xPctRaw) ? Math.max(0, Math.min(100, xPctRaw)) : 80;
+    const yPct = Number.isFinite(yPctRaw) ? Math.max(0, Math.min(100, yPctRaw)) : 86;
+
+    sig.barcodePosition = { xPct, yPct };
+
+    // keep legacy position in sync for older renders (best-effort)
+    if (letter.signatureToken && String(letter.signatureToken) === String(sig.token)) {
+      letter.barcodePosition = { xPct, yPct };
+    }
+    await letter.save();
+
+    await logActivity({
+      req,
+      actor: actorFromUser(currentUser),
+      action: 'letter.barcode_position_updated',
+      statusCode: 200,
+      targetLetterId: letter._id,
+      meta: { xPct, yPct },
+    });
+
+    return res.json({ ok: true, signatureId, xPct, yPct });
   } catch (error) {
     next(error);
   }
@@ -906,27 +1146,63 @@ app.get('/letters/:id/preview', requireAuth, async (req, res, next) => {
     const kop = await getKopConfig();
     const baseUrl = getBaseUrl(req);
 
-    let barcodeDataUrl = '';
-    if (letter.signatureToken) {
-      const verifyUrl = `${baseUrl}/verify/${encodeURIComponent(letter.signatureToken)}`;
-      barcodeDataUrl = await qrDataUrl(verifyUrl);
+    const signatureItems = [];
+    const signatures = Array.isArray(letter.signatures) ? letter.signatures : [];
+    for (const s of signatures) {
+      const verifyUrl = `${baseUrl}/verify/${encodeURIComponent(String(s.token || ''))}`;
+      const dataUrl = s.token ? await qrDataUrl(verifyUrl) : '';
+      signatureItems.push({
+        signatureId: String(s.signatureId || ''),
+        signerId: String(s.signerId || ''),
+        signerEmail: String(s.signerEmail || ''),
+        token: String(s.token || ''),
+        barcodeDataUrl: dataUrl,
+        barcodePosition: s.barcodePosition || {},
+      });
     }
 
-    const html = await renderLetterHtml({
-      kop,
-      letter: {
-        ...letter,
-        barcodeDataUrl,
-      },
-      withChrome: false,
-    });
+    // Legacy fallback (older letters)
+    let legacyBarcodeDataUrl = '';
+    if ((!signatures || signatures.length === 0) && letter.signatureToken) {
+      const verifyUrl = `${baseUrl}/verify/${encodeURIComponent(letter.signatureToken)}`;
+      legacyBarcodeDataUrl = await qrDataUrl(verifyUrl);
+    }
+
+    const kind = String(letter.kind || 'HTML').toUpperCase();
+    const html = kind === 'UPLOAD'
+      ? `<div class="letter" style="padding:0">
+          <div style="padding:14px 14px 10px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap">
+            <div>
+              <div style="font-weight:800">Dokumen Upload</div>
+              <div class="muted small">${String(letter.upload?.originalName || 'document.pdf').replaceAll('<','&lt;').replaceAll('>','&gt;')}</div>
+            </div>
+            <a class="btn ghost" href="/letters/${encodeURIComponent(String(letter._id))}/source" target="_blank" rel="noreferrer">Buka Original</a>
+          </div>
+          <div style="height:72vh; min-height:520px">
+            <iframe title="Dokumen" src="/letters/${encodeURIComponent(String(letter._id))}/source" style="width:100%; height:100%; border:0; display:block"></iframe>
+          </div>
+        </div>`
+      : await renderLetterHtml({
+        kop,
+        letter: {
+          ...letter,
+          barcodeDataUrl: legacyBarcodeDataUrl,
+          signatures: signatureItems,
+        },
+        withChrome: false,
+      });
 
     const isCreator = String(letter.createdBy) === String(currentUser._id);
     const canApprove = canApproveLetters(currentUser);
     const showApprovePanel =
       canApprove &&
-      !letter.signatureToken &&
-      (letter.status === 'SUBMITTED' || (letter.status === 'DRAFT' && roleRank(currentUser.role) >= roleRank('SUPREME') && isCreator));
+      (letter.status === 'SUBMITTED' || (letter.status === 'DRAFT' && roleRank(currentUser.role) >= roleRank('SUPREME') && isCreator) || letter.status === 'APPROVED');
+
+    const isSuperAdmin = String(currentUser.role).toUpperCase() === 'SUPERADMIN';
+    const canAdjustBarcode =
+      canApprove &&
+      letter.status === 'APPROVED' &&
+      (isSuperAdmin || (Array.isArray(letter.signatures) && letter.signatures.some((s) => String(s.signerId) === String(currentUser._id))));
 
     const canSubmit =
       String(currentUser.role).toUpperCase() === 'USER' &&
@@ -935,7 +1211,7 @@ app.get('/letters/:id/preview', requireAuth, async (req, res, next) => {
 
     const canDownload =
       (letter.status === 'APPROVED' || letter.status === 'SENT') &&
-      Boolean(letter.signatureToken) &&
+      (Boolean(letter.signatureToken) || (Array.isArray(letter.signatures) && letter.signatures.length > 0)) &&
       canAccess;
 
     const canMarkSent =
@@ -946,16 +1222,25 @@ app.get('/letters/:id/preview', requireAuth, async (req, res, next) => {
       ? await qrDataUrl(`${baseUrl}/verify/pending`)
       : '';
 
+    const supremeUsers = isCreator
+      ? await User.find({ role: 'SUPREME' }).sort({ supremeTier: -1, email: 1 }).select('_id email supremeTier name').lean()
+      : [];
+
+    const err = String(req.query.err || '').trim();
+
     res.render('preview', {
       currentUser,
       letter,
       html,
       canApprove,
       showApprovePanel,
+      canAdjustBarcode,
       canSubmit,
       canDownload,
       canMarkSent,
       barcodePreviewDataUrl,
+      supremeUsers,
+      err,
     });
   } catch (error) {
     next(error);
@@ -971,25 +1256,75 @@ app.get('/letters/:id/pdf', requireAuth, async (req, res, next) => {
     const canAccess = canViewAllLetters(currentUser) || String(letter.createdBy) === String(currentUser._id);
     if (!canAccess) return res.status(403).send('Forbidden');
 
-    if (!(letter.status === 'APPROVED' || letter.status === 'SENT') || !letter.signatureToken) {
+    const hasAnySignature = Boolean(letter.signatureToken) || (Array.isArray(letter.signatures) && letter.signatures.length > 0);
+    if (!(letter.status === 'APPROVED' || letter.status === 'SENT') || !hasAnySignature) {
       return res.status(403).send('Surat belum di-approve Supreme, belum bisa di-download.');
     }
 
-    const kop = await getKopConfig();
     const baseUrl = getBaseUrl(req);
-    const verifyUrl = `${baseUrl}/verify/${encodeURIComponent(letter.signatureToken)}`;
-    const barcodeDataUrl = await qrDataUrl(verifyUrl);
 
-    const html = await renderLetterHtml({
-      kop,
-      letter: {
-        ...letter,
-        barcodeDataUrl,
-      },
-      withChrome: false,
-    });
+    const signatureItems = [];
+    const signatures = Array.isArray(letter.signatures) ? letter.signatures : [];
+    for (const s of signatures) {
+      const verifyUrl = `${baseUrl}/verify/${encodeURIComponent(String(s.token || ''))}`;
+      const dataUrl = s.token ? await qrDataUrl(verifyUrl) : '';
+      signatureItems.push({
+        signatureId: String(s.signatureId || ''),
+        signerId: String(s.signerId || ''),
+        signerEmail: String(s.signerEmail || ''),
+        token: String(s.token || ''),
+        barcodeDataUrl: dataUrl,
+        barcodePosition: s.barcodePosition || {},
+      });
+    }
 
-    const pdfBuffer = await generatePdfBuffer(html);
+    let legacyBarcodeDataUrl = '';
+    if ((!signatures || signatures.length === 0) && letter.signatureToken) {
+      const verifyUrl = `${baseUrl}/verify/${encodeURIComponent(letter.signatureToken)}`;
+      legacyBarcodeDataUrl = await qrDataUrl(verifyUrl);
+    }
+
+    const kind = String(letter.kind || 'HTML').toUpperCase();
+    let pdfBuffer;
+
+    if (kind === 'UPLOAD') {
+      const storagePath = String(letter.upload?.storagePath || '').trim();
+      if (!storagePath) return res.status(500).send('File upload tidak ditemukan.');
+      const sourcePdf = await fs.promises.readFile(storagePath);
+
+      const stamps = [];
+      for (const s of signatureItems) {
+        const verifyUrl = `${baseUrl}/verify/${encodeURIComponent(String(s.token || ''))}`;
+        const qr = s.token ? await qrDataUrl(verifyUrl) : '';
+        const x = Number(s.barcodePosition?.xPct);
+        const y = Number(s.barcodePosition?.yPct);
+        stamps.push({ qrDataUrl: qr, xPct: Number.isFinite(x) ? x : 80, yPct: Number.isFinite(y) ? y : 86, sizePt: 92 });
+      }
+
+      // Legacy single signature fallback
+      if (stamps.length === 0 && letter.signatureToken) {
+        const verifyUrl = `${baseUrl}/verify/${encodeURIComponent(letter.signatureToken)}`;
+        const qr = await qrDataUrl(verifyUrl);
+        const x = Number(letter.barcodePosition?.xPct);
+        const y = Number(letter.barcodePosition?.yPct);
+        stamps.push({ qrDataUrl: qr, xPct: Number.isFinite(x) ? x : 80, yPct: Number.isFinite(y) ? y : 86, sizePt: 92 });
+      }
+
+      pdfBuffer = await stampPdfWithQrs({ pdfBuffer: sourcePdf, stamps });
+    } else {
+      const kop = await getKopConfig();
+      const html = await renderLetterHtml({
+        kop,
+        letter: {
+          ...letter,
+          barcodeDataUrl: legacyBarcodeDataUrl,
+          signatures: signatureItems,
+        },
+        withChrome: false,
+      });
+
+      pdfBuffer = await generatePdfBuffer(html, { repeatingHeaderFooter: true, kop });
+    }
 
     const safeNumber = (letter.number || 'surat').replace(/[^a-z0-9-_]+/gi, '-');
     const filename = `surat-${safeNumber}.pdf`;
@@ -1003,18 +1338,48 @@ app.get('/letters/:id/pdf', requireAuth, async (req, res, next) => {
   }
 });
 
+app.get('/letters/:id/source', requireAuth, async (req, res, next) => {
+  try {
+    const currentUser = res.locals.currentUser;
+    const letter = await Letter.findById(req.params.id).lean();
+    if (!letter) return res.status(404).send('Surat tidak ditemukan.');
+
+    const canAccess = canViewAllLetters(currentUser) || String(letter.createdBy) === String(currentUser._id);
+    if (!canAccess) return res.status(403).send('Forbidden');
+
+    const kind = String(letter.kind || 'HTML').toUpperCase();
+    if (kind !== 'UPLOAD') return res.status(404).send('Dokumen source tidak tersedia.');
+
+    const storagePath = String(letter.upload?.storagePath || '').trim();
+    if (!storagePath) return res.status(404).send('File upload tidak ditemukan.');
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Cache-Control', 'no-store');
+    return res.sendFile(storagePath);
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get('/approvals', requireRole(['SUPREME', 'SUPERADMIN']), async (req, res, next) => {
   try {
     const currentUser = res.locals.currentUser;
+    const isSuperAdmin = String(currentUser.role).toUpperCase() === 'SUPERADMIN';
     const lettersRaw = await Letter.find({ status: 'SUBMITTED' })
       .populate('createdBy', 'email')
       .sort({ submittedAt: -1 })
       .lean();
 
-    const letters = lettersRaw.map((l) => ({
-      ...l,
-      createdByEmail: l.createdBy?.email || '',
-    }));
+    const letters = lettersRaw
+      .filter((l) => {
+        if (isSuperAdmin) return true;
+        const signed = Array.isArray(l.signatures) ? l.signatures : [];
+        return !signed.some((s) => String(s.signerId) === String(currentUser._id));
+      })
+      .map((l) => ({
+        ...l,
+        createdByEmail: l.createdBy?.email || '',
+      }));
 
     res.render('approvals', { currentUser, letters });
   } catch (error) {
@@ -1142,6 +1507,39 @@ app.post('/admin/users/:id/role', requireRole(['ADMIN', 'SUPERADMIN']), async (r
   }
 });
 
+app.post('/admin/users/:id/supreme-tier', requireRole(['ADMIN', 'SUPERADMIN']), async (req, res, next) => {
+  try {
+    const currentUser = res.locals.currentUser;
+    const isSuper = String(currentUser.role).toUpperCase() === 'SUPERADMIN';
+
+    const target = await User.findById(req.params.id);
+    if (!target) return res.status(404).send('User tidak ditemukan.');
+
+    if (!isSuper && String(target.role).toUpperCase() === 'SUPERADMIN') {
+      return res.status(403).send('Tidak bisa mengubah user SUPERADMIN.');
+    }
+
+    const tierRaw = Number(req.body.supremeTier);
+    const tier = Number.isFinite(tierRaw) && (tierRaw === 1 || tierRaw === 2) ? tierRaw : 1;
+
+    target.supremeTier = tier;
+    await target.save();
+
+    await logActivity({
+      req,
+      actor: actorFromUser(currentUser),
+      action: 'admin.user_supreme_tier_changed',
+      statusCode: 302,
+      targetUserId: target._id,
+      meta: { supremeTier: tier },
+    });
+
+    return res.redirect('/admin/users');
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.get('/verify/:token', async (req, res, next) => {
   try {
     const secret = signatureSecret || 'dev-signature-secret';
@@ -1153,17 +1551,34 @@ app.get('/verify/:token', async (req, res, next) => {
 
     const payload = verified.payload || {};
     const letterId = String(payload.letterId || '');
-    const letter = await Letter.findById(letterId).lean();
+    const letter = await Letter.findById(letterId)
+      .populate('approvedBy', 'email name')
+      .populate('signatures.signerId', 'email name')
+      .lean();
     if (!letter) {
       return res.status(404).render('verify', { ok: false, message: 'Surat tidak ditemukan.', letter: null, approvedAt: '' });
     }
 
-    if (!letter.signatureToken || letter.signatureToken !== token) {
+    const signatures = Array.isArray(letter.signatures) ? letter.signatures : [];
+    const matchedSignature = signatures.find((s) => s && String(s.token || '') === token) || null;
+
+    const legacyOk = letter.signatureToken && String(letter.signatureToken) === token;
+    if (!matchedSignature && !legacyOk) {
       return res.status(400).render('verify', { ok: false, message: 'Tanda tangan tidak cocok.', letter: null, approvedAt: '' });
     }
 
     const approvedAt = letter.approvedAt ? new Date(letter.approvedAt).toLocaleString('id-ID') : '';
-    return res.render('verify', { ok: true, message: '', letter, approvedAt });
+    let signedBy = '';
+    if (matchedSignature) {
+      const signerName = String(matchedSignature.signerId?.name || '').trim();
+      const signerEmail = String(matchedSignature.signerId?.email || matchedSignature.signerEmail || '').trim();
+      signedBy = signerName || signerEmail || '';
+    } else {
+      const signerName = String(letter.approvedBy?.name || '').trim();
+      const signerEmail = String(letter.approvedBy?.email || '').trim();
+      signedBy = signerName || signerEmail || '';
+    }
+    return res.render('verify', { ok: true, message: '', letter, approvedAt, signedBy });
   } catch (error) {
     next(error);
   }

@@ -36,9 +36,20 @@
         font-weight: 800;
         font-size: 12px;
       }
+
+      body.adjust-barcode .letter .barcode {
+        touch-action: none;
+        cursor: grab;
+        user-select: none;
+      }
+      body.adjust-barcode .letter .barcode:active { cursor: grabbing; }
     </style>
   </head>
-  <body>
+  <body
+    class="<%= canAdjustBarcode ? 'adjust-barcode' : '' %>"
+    data-current-user-id="<%= String(currentUser._id) %>"
+    data-is-superadmin="<%= String(currentUser.role || '').toUpperCase() === 'SUPERADMIN' ? '1' : '0' %>"
+  >
     <div class="shell">
       <header class="nav">
         <a class="brand" href="/dashboard">
@@ -67,6 +78,12 @@
       </header>
 
       <main class="page">
+        <% if (err) { %>
+          <div class="paper" style="border:1px solid rgba(180,0,0,0.25); background:rgba(255,0,0,0.04); margin-bottom:12px">
+            <strong>Perhatian:</strong> <%= err %>
+          </div>
+        <% } %>
+
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px">
           <div>
             <div class="muted">Status</div>
@@ -92,16 +109,53 @@
           </div>
         </div>
 
+        <% const isCreator = String(letter.createdBy) === String(currentUser._id); %>
+        <% if (isCreator && (letter.status === 'DRAFT' || letter.status === 'SUBMITTED')) { %>
+          <div class="paper" style="margin-bottom:14px">
+            <h3 style="margin:0 0 8px">Tanda Tangan Supreme</h3>
+            <p class="muted" style="margin:0 0 12px">
+              Pilih Supreme yang wajib menandatangani (bisa 1, 2, atau 3). Waktu submit, surat akan muncul di halaman Approval Supreme yang dipilih.
+            </p>
+
+            <form action="/letters/<%= letter._id %>/request-signers" method="post" style="display:grid; gap:10px">
+              <div style="display:grid; gap:8px">
+                <% if (!supremeUsers || !supremeUsers.length) { %>
+                  <div class="muted">Belum ada user role SUPREME.</div>
+                <% } else { %>
+                  <% supremeUsers.forEach(function(u) { %>
+                    <% const checked = (letter.requestedSigners || []).some(function(r) { return String(r.userId) === String(u._id); }); %>
+                    <label style="display:flex; align-items:center; gap:10px; font-weight:600">
+                      <input type="checkbox" name="signerIds" value="<%= u._id %>" <%= checked ? 'checked' : '' %> />
+                      <span><%= u.email %> <span class="muted small">(Tier <%= u.supremeTier || 1 %>)</span></span>
+                    </label>
+                  <% }) %>
+                <% } %>
+              </div>
+
+              <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end">
+                <button class="btn ghost" type="submit">Simpan Penandatangan</button>
+              </div>
+            </form>
+          </div>
+        <% } %>
+
         <% if (canApprove && showApprovePanel) { %>
           <div class="paper" style="margin-bottom:14px">
-            <h3 style="margin:0 0 8px">Approve + Tanda Tangan (Barcode)</h3>
-            <p class="muted" style="margin:0 0 12px">Geser barcode di preview surat (di bawah) untuk menentukan posisi tanda tangan, lalu klik Approve.</p>
+            <h3 style="margin:0 0 8px"><%= letter.status === 'APPROVED' ? 'Tambah Tanda Tangan (Barcode)' : 'Approve + Tanda Tangan (Barcode)' %></h3>
+            <p class="muted" style="margin:0 0 12px">Geser barcode di preview surat (di bawah) untuk menentukan posisi tanda tangan, lalu klik <%= letter.status === 'APPROVED' ? 'Tanda Tangan' : 'Approve' %>.</p>
             <form action="/letters/<%= letter._id %>/approve" method="post" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
               <input type="hidden" name="xPct" id="xPct" value="<%= letter.barcodePosition?.xPct ?? 80 %>" />
               <input type="hidden" name="yPct" id="yPct" value="<%= letter.barcodePosition?.yPct ?? 86 %>" />
-              <button class="btn" type="submit">Approve & Sign</button>
+              <button class="btn" type="submit"><%= letter.status === 'APPROVED' ? 'Tanda Tangan' : 'Approve & Sign' %></button>
               <span class="muted small">(Posisi tersimpan otomatis dari drag)</span>
             </form>
+          </div>
+        <% } %>
+
+        <% if (canAdjustBarcode) { %>
+          <div class="paper" style="margin-bottom:14px">
+            <h3 style="margin:0 0 8px">Atur Posisi Barcode</h3>
+            <p class="muted" style="margin:0">Klik dan geser barcode di surat untuk mengubah posisinya. Posisi akan tersimpan otomatis.</p>
           </div>
         <% } %>
 
@@ -163,6 +217,107 @@
             dragging = false;
             ev.preventDefault();
           });
+        })();
+      </script>
+    <% } %>
+
+    <% if (canAdjustBarcode) { %>
+      <script type="application/json" id="signatureMeta">
+        <%- JSON.stringify((letter.signatures || []).map(function (s) {
+          return { signatureId: String(s.signatureId || ''), signerId: String(s.signerId || '') };
+        })) %>
+      </script>
+      <script>
+        (function () {
+          var paper = document.querySelector('.paper');
+          if (!paper) return;
+
+          var letterEl = paper.querySelector('.letter') || paper;
+          var barcodes = Array.prototype.slice.call(paper.querySelectorAll('.letter .barcode'));
+          if (!barcodes.length) return;
+
+          var body = document.body;
+          var currentUserId = String(body.getAttribute('data-current-user-id') || '');
+          var isSuperAdmin = String(body.getAttribute('data-is-superadmin') || '') === '1';
+
+          var sigMeta = [];
+          try {
+            var jsonEl = document.getElementById('signatureMeta');
+            sigMeta = JSON.parse(jsonEl ? jsonEl.textContent : '[]') || [];
+          } catch (e) {
+            sigMeta = [];
+          }
+
+          function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+          function canDragBarcode(el) {
+            if (isSuperAdmin) return true;
+            var signatureId = String(el.getAttribute('data-signature-id') || '');
+            if (!signatureId) return false;
+
+            var sig = sigMeta.find(function (s) {
+              return s && String(s.signatureId || '') === signatureId;
+            });
+            if (!sig) return false;
+            return String(sig.signerId || '') === String(currentUserId);
+          }
+
+          function attachDrag(barcode) {
+            if (!canDragBarcode(barcode)) return;
+
+            var signatureId = String(barcode.getAttribute('data-signature-id') || '');
+            if (!signatureId) return;
+
+            var dragging = false;
+            var last = { xPct: null, yPct: null };
+            var saveTimer = null;
+
+            function scheduleSave(xPct, yPct) {
+              last.xPct = xPct;
+              last.yPct = yPct;
+              if (saveTimer) window.clearTimeout(saveTimer);
+              saveTimer = window.setTimeout(function () {
+                fetch('/letters/<%= letter._id %>/barcode-position', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ signatureId: signatureId, xPct: last.xPct, yPct: last.yPct }),
+                }).catch(function () { /* ignore */ });
+              }, 250);
+            }
+
+            function setPosFromClient(clientX, clientY) {
+              var rect = letterEl.getBoundingClientRect();
+              var x = ((clientX - rect.left) / rect.width) * 100;
+              var y = ((clientY - rect.top) / rect.height) * 100;
+              x = clamp(x, 0, 100);
+              y = clamp(y, 0, 100);
+              barcode.style.left = x + '%';
+              barcode.style.top = y + '%';
+              scheduleSave(Math.round(x * 100) / 100, Math.round(y * 100) / 100);
+            }
+
+            barcode.addEventListener('pointerdown', function (ev) {
+              dragging = true;
+              try { barcode.setPointerCapture(ev.pointerId); } catch (e) {}
+              setPosFromClient(ev.clientX, ev.clientY);
+              ev.preventDefault();
+            });
+
+            barcode.addEventListener('pointermove', function (ev) {
+              if (!dragging) return;
+              setPosFromClient(ev.clientX, ev.clientY);
+              ev.preventDefault();
+            });
+
+            barcode.addEventListener('pointerup', function (ev) {
+              dragging = false;
+              ev.preventDefault();
+            });
+          }
+
+          for (var i = 0; i < barcodes.length; i++) {
+            attachDrag(barcodes[i]);
+          }
         })();
       </script>
     <% } %>

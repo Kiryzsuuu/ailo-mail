@@ -2,6 +2,11 @@
   --text: #111;
   --muted: #4b4b4b;
   --line: #111;
+  --letterFontSize: 12pt;
+  --letterLineHeight: 1.55;
+  --letterParagraphGap: 0pt;
+  --letterSectionGap: 0pt;
+  --telkomRed: #c80000;
 }
 
 * { box-sizing: border-box; }
@@ -14,40 +19,90 @@ html, body {
   background: #fff;
 }
 
+@page {
+  size: A4;
+  margin: 16mm;
+}
+
+@media screen {
+  .letter {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 10mm auto;
+  }
+}
+
+@media print {
+  .letter {
+    width: auto;
+    min-height: auto;
+    margin: 0;
+  }
+}
+
 .letter {
-  font-size: 12.5pt;
-  line-height: 1.55;
+  font-size: var(--letterFontSize, 12pt);
+  line-height: var(--letterLineHeight, 1.55);
   position: relative;
 }
 
+.content > p,
+.content > div {
+  margin: 0 0 var(--letterParagraphGap, 0pt) 0;
+}
+
+.content img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Surat tugas tables (keep borders consistent) */
+.st-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.st-table th,
+.st-table td {
+  border: 1px solid var(--line);
+  padding: 6px 8px;
+}
+
+.st-table th {
+  font-weight: 800;
+  text-align: center;
+}
+
+.st-table td {
+  vertical-align: top;
+}
+
 .kop {
-  display: grid;
-  grid-template-columns: 90px 1fr;
-  gap: 12px;
-  align-items: center;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.kop--simple {
+  padding-top: 2mm;
+  padding-bottom: 6mm;
 }
 
 .kop-logo {
-  width: 90px;
-  height: 90px;
+  width: 78mm;
+  height: 16mm;
   object-fit: contain;
 }
 
 .kop-logo-placeholder {
-  width: 90px;
-  height: 90px;
+  width: 78mm;
+  height: 16mm;
   border: 1.5px solid var(--line);
   display: grid;
   place-items: center;
   font-weight: 700;
 }
-
-.kop-org1 { font-weight: 800; font-size: 18px; letter-spacing: 0.3px; }
-.kop-org2 { font-weight: 700; font-size: 14px; }
-.kop-aff { font-size: 12px; margin-top: 2px; }
-
-.kop-meta { font-size: 10.5px; color: #222; margin-top: 6px; }
-.kop-line { border-top: 2px solid var(--line); margin-top: 10px; }
 
 .sep-dot { margin: 0 8px; }
 
@@ -130,4 +185,48 @@ html, body {
   height: 96px;
   object-fit: contain;
   transform: translate(-50%, -50%);
+}
+
+.telkom-footer {
+  margin-top: 14px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(17, 17, 17, 0.45);
+}
+
+.telkom-footer-text {
+  font-size: 7.2pt;
+  line-height: 1.25;
+  color: #111;
+}
+
+.telkom-footer-web {
+  margin-top: 6px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 10pt;
+}
+
+.telkom-footer-band {
+  margin-top: 6px;
+  height: 14mm;
+  width: 100%;
+  background: var(--telkomRed);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  position: relative;
+  overflow: hidden;
+}
+
+.telkom-footer-band::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 100%;
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='220' viewBox='0 0 1200 220'%3E%3Cpath fill='%23ffffff' d='M0,80 C220,150 420,10 600,70 C780,130 980,40 1200,95 L1200,0 L0,0 Z'/%3E%3C/svg%3E");
+  opacity: 0.92;
 }

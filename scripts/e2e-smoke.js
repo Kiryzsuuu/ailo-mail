@@ -1,5 +1,9 @@
 require('dotenv').config();
 
+// Ensure tests don't depend on real SMTP quotas.
+process.env.DISABLE_EMAIL = '1';
+process.env.NODE_ENV = 'test';
+
 const request = require('supertest');
 const mongoose = require('mongoose');
 

@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema(
     name: { type: String, default: '', trim: true },
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ROLES, default: 'USER' },
+    supremeTier: { type: Number, default: 1 },
     emailVerified: { type: Boolean, default: false },
   },
   { timestamps: true }

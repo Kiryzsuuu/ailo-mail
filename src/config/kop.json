@@ -1,13 +1,18 @@
 {
-  "orgNameLine1": "AI Laboratory and Operations",
-  "orgNameLine2": "AI Learning Optimization Center (AILO)",
-  "affiliationLine": "Telkom University",
-  "addressLines": [
-    "PUI-PT SATRIA Headquarter — Gedung Panambulai Lantai 1",
-    "Telkom University Kampus Bandung, Jl. Telekomunikasi No. 1, Terusan Buahbatu",
-    "Kab. Bandung, Jawa Barat 40257"
-  ],
-  "email": "ailo@telkomuniversity.ac.id",
-  "website": "https://ailo.telkomuniversity.ac.id/",
-  "logoPath": "/logo.png"
+  "orgNameLine1": "Telkom University",
+  "orgNameLine2": "",
+  "affiliationLine": "",
+  "addressLines": [],
+  "email": "info@telkomuniversity.ac.id",
+  "website": "https://www.telkomuniversity.ac.id",
+  "logoPath": "/assets/Logo-Telkom-University-png-3430x1174.png",
+  "stationeryPath": "/assets/telkom-letterhead.png",
+  "headerImagePath": "",
+  "footerImagePath": "",
+  "footerLines": [
+    "Main Campus Bangkit Building Telkom University, Jl. Telekomunikasi, Terusan Buah Batu, Bandung 40257, West Java, Indonesia | t: (022) 7566456 | e: info@telkomuniversity.ac.id",
+    "Jakarta Campus Jl. Daan Mogot KM. 11, Kedaung Kali Angke, Cengkareng, West Jakarta 11710, Indonesia | t: +62 81197800200 / (021) 545 1597 / 545 1697",
+    "Surabaya Campus Jl. Ketintang No.156, Gayungan, Surabaya, East Java 60231, Indonesia | t: +62 81139808009 / (031) 8280800",
+    "Purwokerto Campus Jl. DI Panjaitan No.128, Karangreja, Purwokerto Kidul, Kabupaten Banyumas, Center Java 53147, Indonesia | t: (0281) 641629"
+  ]
 }
