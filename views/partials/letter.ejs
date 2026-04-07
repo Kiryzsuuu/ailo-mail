@@ -17,32 +17,35 @@
   </head>
   <body>
     <div class="letter">
-      <%- include('./kop', { kop }) %>
+      <header class="letter-header">
+        <%- include('./kop', { kop }) %>
+      </header>
 
-      <div class="letter-body">
-        <div class="letter-head">
-          <div class="letter-date"><%= letter.place %>, <%= letter.formattedDate %></div>
-          <table class="letter-meta">
-            <tr>
-              <td class="k">Nomor</td>
-              <td class="v">: <%= letter.number || '-' %></td>
-            </tr>
-            <tr>
-              <td class="k">Lampiran</td>
-              <td class="v">: <%= letter.attachment || '-' %></td>
-            </tr>
-            <tr>
-              <td class="k">Perihal</td>
-              <td class="v">: <%= letter.subject || '-' %></td>
-            </tr>
-          </table>
-        </div>
+      <main class="letter-main">
+        <div class="letter-date"><%= letter.place %>, <%= letter.formattedDate %></div>
+        <table class="letter-meta">
+          <tr>
+            <td class="k">Nomor</td>
+            <td class="sep">:</td>
+            <td class="v"><%= letter.number || '-' %></td>
+          </tr>
+          <tr>
+            <td class="k">Lampiran</td>
+            <td class="sep">:</td>
+            <td class="v"><%= letter.attachment || '-' %></td>
+          </tr>
+          <tr>
+            <td class="k">Perihal</td>
+            <td class="sep">:</td>
+            <td class="v"><%= letter.subject || '-' %></td>
+          </tr>
+        </table>
 
         <div class="recipient">
-        <div><strong><%= letter.recipient || 'Yth. ...' %></strong></div>
-        <% if (letter.recipientAddressHtml) { %>
-          <div class="recipient-address"><%- letter.recipientAddressHtml %></div>
-        <% } %>
+          <div><strong><%= letter.recipient || 'Yth. ...' %></strong></div>
+          <% if (letter.recipientAddressHtml) { %>
+            <div class="recipient-address"><%- letter.recipientAddressHtml %></div>
+          <% } %>
           <div>di Tempat</div>
         </div>
 
@@ -52,15 +55,11 @@
 
         <div class="sign">
           <div class="closing"><%= letter.closing || '' %></div>
-          <div class="sign-row">
-            <div class="sign-mark">
-              <div class="sign-space"></div>
-              <div class="sign-name"><strong><%= letter.signatoryName || '' %></strong></div>
-              <div class="sign-title"><%= letter.signatoryTitle || '' %></div>
-            </div>
-          </div>
+          <div class="sign-space"></div>
+          <div class="sign-name"><strong><%= letter.signatoryName || '' %></strong></div>
+          <div class="sign-title"><%= letter.signatoryTitle || '' %></div>
         </div>
-      </div>
+      </main>
 
       <% if (Array.isArray(letter.signatures) && letter.signatures.length > 0) { %>
         <% for (const s of letter.signatures) { %>
@@ -88,7 +87,8 @@
         />
       <% } %>
 
-      <div class="telkom-footer" style="margin-top:auto;">
+      <footer class="telkom-footer">
+        <div class="telkom-footer-line"></div>
         <div class="telkom-footer-text">
           <% const lines = (kop && Array.isArray(kop.footerLines) && kop.footerLines.length) ? kop.footerLines : []; %>
           <% if (lines.length) { %>
@@ -101,7 +101,7 @@
         <% const webLabel = webRaw.replace(/^https?:\/\//, ''); %>
         <div class="telkom-footer-web"><a href="<%= webRaw %>" target="_blank" rel="noreferrer noopener"><%= webLabel %></a></div>
         <div class="telkom-footer-band" aria-hidden="true"></div>
-      </div>
+      </footer>
     </div>
   </body>
 </html>

@@ -21,7 +21,7 @@ html, body {
 
 @page {
   size: A4;
-  margin: 16mm;
+  margin: 0;
 }
 
 @media screen {
@@ -29,9 +29,8 @@ html, body {
     width: 210mm;
     height: 297mm;
     margin: 10mm auto;
-    display: flex;
-    flex-direction: column;
     background: #fff;
+    box-shadow: 0 0 15px rgba(0,0,0,0.18);
   }
 }
 
@@ -40,8 +39,7 @@ html, body {
     width: auto;
     height: auto;
     margin: 0;
-    display: flex;
-    flex-direction: column;
+    box-shadow: none;
   }
 }
 
@@ -49,9 +47,17 @@ html, body {
   font-size: var(--letterFontSize, 12pt);
   line-height: var(--letterLineHeight, 1.55);
   position: relative;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+
+  /* Layout metrics (match reference template) */
+  --headerHeight: 40mm;
+  --headerPadTop: 15mm;
+  --headerPadRight: 20mm;
+  --mainTop: 40mm;
+  --mainBottom: 45mm;
+  --mainPadX: 25mm;
+  --footerPadX: 15mm;
 }
 
 .content > p,
@@ -86,34 +92,37 @@ html, body {
   vertical-align: top;
 }
 
+.letter-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--headerHeight);
+  padding-top: var(--headerPadTop);
+  padding-right: var(--headerPadRight);
+  text-align: right;
+}
+
 .kop {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 12.5mm;
-  padding-bottom: 0;
-  flex-shrink: 0;
+  display: inline-block;
 }
 
 .kop--image {
-  display: block;
-  width: 100%;
+  display: inline-block;
 }
 
 .kop-header {
-  display: block;
-  width: 100%;
+  display: inline-block;
+  width: 180px;
   height: auto;
-  max-height: 60mm;
-}
-
-.kop--simple {
-  justify-content: center;
+  max-width: 70mm;
+  max-height: calc(var(--headerHeight) - var(--headerPadTop));
+  object-fit: contain;
 }
 
 .kop-logo {
-  width: 78mm;
-  height: 16mm;
+  width: 180px;
+  height: auto;
   object-fit: contain;
 }
 
@@ -128,17 +137,24 @@ html, body {
 
 .sep-dot { margin: 0 8px; }
 
-.letter-head {
-  margin-top: 0;
-  margin-bottom: 14px;
+.letter-main {
+  position: absolute;
+  top: var(--mainTop);
+  bottom: var(--mainBottom);
+  left: 0;
+  width: 100%;
+  padding-left: var(--mainPadX);
+  padding-right: var(--mainPadX);
+  overflow: hidden;
 }
 
-.letter-date { text-align: right; margin-bottom: 10px; }
+.letter-date { text-align: right; margin-bottom: 20px; }
 
 .letter-meta {
   border-collapse: collapse;
   width: 100%;
-  max-width: 420px;
+  margin-top: 10px;
+  margin-bottom: 25px;
 }
 
 .letter-meta td {
@@ -146,39 +162,27 @@ html, body {
   vertical-align: top;
 }
 
-.letter-meta .k { width: 90px; }
+.letter-meta .k { width: 80px; }
+.letter-meta .sep { width: 10px; text-align: center; }
 
 .recipient {
-  margin-top: 18px;
+  margin-top: 0;
   margin-bottom: 18px;
 }
 
 .recipient-address { margin-top: 4px; }
 
 .content {
-  flex: 1;
   text-align: justify;
   margin-bottom: 14px;
 }
 
 .sign {
-  margin-top: 18px;
-  width: 45%;
-  margin-left: auto;
+  margin-top: 40px;
+  text-align: right;
 }
 
 .sign-space { height: 72px; }
-
-.sign-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.sign-mark {
-  flex: 1;
-}
 
 .signature {
   display: block;
@@ -211,32 +215,38 @@ html, body {
   transform: translate(-50%, -50%);
 }
 
-.letter-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 0;
+.telkom-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
 }
 
-.telkom-footer {
-  margin-top: auto;
-  padding-top: 8px;
-  padding-bottom: 12.5mm;
-  border-top: 1px solid rgba(17, 17, 17, 0.45);
-  flex-shrink: 0;
+.telkom-footer-line {
+  width: 85%;
+  margin: 0 auto 10px auto;
+  border-top: 1px solid rgba(17, 17, 17, 0.75);
 }
 
 .telkom-footer-text {
   font-size: 7.2pt;
   line-height: 1.25;
   color: #111;
+  padding: 0 var(--footerPadX);
+  margin-bottom: 5px;
 }
 
 .telkom-footer-web {
-  margin-top: 6px;
+  margin-top: 0;
   text-align: center;
   font-weight: 800;
   font-size: 10pt;
+}
+
+.telkom-footer-web a {
+  color: #0000ff;
+  text-decoration: underline;
 }
 
 .telkom-footer-band {

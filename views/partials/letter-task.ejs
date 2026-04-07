@@ -67,9 +67,11 @@
   </head>
   <body>
     <div class="letter">
-      <%- include('./kop', { kop }) %>
+      <header class="letter-header">
+        <%- include('./kop', { kop }) %>
+      </header>
 
-      <div class="letter-body">
+      <main class="letter-main">
         <div class="doc-title"><%= (letter.tableConfig && letter.tableConfig.title) ? letter.tableConfig.title : 'SURAT TUGAS' %></div>
         <div class="doc-number"><%= (letter.tableConfig && letter.tableConfig.numberLabel) ? letter.tableConfig.numberLabel : 'Nomor' %>: <%= letter.number || '-' %></div>
 
@@ -77,54 +79,54 @@
           <%- letter.bodyHtml || '' %>
         </div>
 
-      <div class="st-meta">
-        <table class="kv">
-          <tr>
-            <td class="k">Nama</td><td class="sep">:</td><td><%= letter.signatoryName || '' %></td>
-          </tr>
-          <% if (letter.signatoryNip) { %>
+        <div class="st-meta">
+          <table class="kv">
             <tr>
-              <td class="k">NIP</td><td class="sep">:</td><td><%= letter.signatoryNip %></td>
+              <td class="k">Nama</td><td class="sep">:</td><td><%= letter.signatoryName || '' %></td>
             </tr>
-          <% } %>
-          <tr>
-            <td class="k">Jabatan</td><td class="sep">:</td><td><%= letter.signatoryTitle || '' %></td>
-          </tr>
-        </table>
-      </div>
+            <% if (letter.signatoryNip) { %>
+              <tr>
+                <td class="k">NIP</td><td class="sep">:</td><td><%= letter.signatoryNip %></td>
+              </tr>
+            <% } %>
+            <tr>
+              <td class="k">Jabatan</td><td class="sep">:</td><td><%= letter.signatoryTitle || '' %></td>
+            </tr>
+          </table>
+        </div>
 
-      <% if (letter.tableConfig && Array.isArray(letter.tableConfig.columns) && letter.tableConfig.columns.length && Array.isArray(letter.tableRows) && letter.tableRows.length) { %>
-        <div style="margin-top:4px">Dengan ini memberikan tugas kepada:</div>
-        <table class="st-table">
-          <thead>
-            <tr>
-              <% letter.tableConfig.columns.forEach(function (c) { %>
-                <th><%= c %></th>
-              <% }) %>
-            </tr>
-          </thead>
-          <tbody>
-            <% letter.tableRows.forEach(function (row) { %>
+        <% if (letter.tableConfig && Array.isArray(letter.tableConfig.columns) && letter.tableConfig.columns.length && Array.isArray(letter.tableRows) && letter.tableRows.length) { %>
+          <div style="margin-top:4px">Dengan ini memberikan tugas kepada:</div>
+          <table class="st-table">
+            <thead>
               <tr>
                 <% letter.tableConfig.columns.forEach(function (c) { %>
-                  <td style="text-align:<%= c === 'No' ? 'center' : 'left' %>"><%= row[c] || '' %></td>
+                  <th><%= c %></th>
                 <% }) %>
               </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      <% } %>
+            </thead>
+            <tbody>
+              <% letter.tableRows.forEach(function (row) { %>
+                <tr>
+                  <% letter.tableConfig.columns.forEach(function (c) { %>
+                    <td style="text-align:<%= c === 'No' ? 'center' : 'left' %>"><%= row[c] || '' %></td>
+                  <% }) %>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        <% } %>
 
-      <% if (Array.isArray(letter.detailsRows) && letter.detailsRows.length) { %>
-        <div>Yang akan diselenggarakan pada:</div>
-        <table class="kv" style="margin-top:6px">
-          <% letter.detailsRows.forEach(function (it) { %>
-            <tr>
-              <td class="k"><%= it.k %></td><td class="sep">:</td><td><%= it.v %></td>
-            </tr>
-          <% }) %>
-        </table>
-      <% } %>
+        <% if (Array.isArray(letter.detailsRows) && letter.detailsRows.length) { %>
+          <div>Yang akan diselenggarakan pada:</div>
+          <table class="kv" style="margin-top:6px">
+            <% letter.detailsRows.forEach(function (it) { %>
+              <tr>
+                <td class="k"><%= it.k %></td><td class="sep">:</td><td><%= it.v %></td>
+              </tr>
+            <% }) %>
+          </table>
+        <% } %>
 
         <div style="margin-top:14px"><%= letter.closing || '' %></div>
 
@@ -136,7 +138,7 @@
             <div style="margin-top:2px">NIP. <%= letter.signatoryNip %></div>
           <% } %>
         </div>
-      </div>
+      </main>
 
       <% if (Array.isArray(letter.signatures) && letter.signatures.length > 0) { %>
         <% for (const s of letter.signatures) { %>
@@ -164,7 +166,8 @@
         />
       <% } %>
 
-      <div class="telkom-footer" style="margin-top:auto;">
+      <footer class="telkom-footer">
+        <div class="telkom-footer-line"></div>
         <div class="telkom-footer-text">
           <% const lines = (kop && Array.isArray(kop.footerLines) && kop.footerLines.length) ? kop.footerLines : []; %>
           <% if (lines.length) { %>
@@ -177,8 +180,7 @@
         <% const webLabel = webRaw.replace(/^https?:\/\//, ''); %>
         <div class="telkom-footer-web"><a href="<%= webRaw %>" target="_blank" rel="noreferrer noopener"><%= webLabel %></a></div>
         <div class="telkom-footer-band" aria-hidden="true"></div>
-      </div>
+      </footer>
     </div>
   </body>
-</html>
 </html>
