@@ -7,7 +7,29 @@
     <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
     <link rel="stylesheet" href="/print.css" />
     <style>
+      /* Keep regular .paper cards unchanged; only the letter preview should be A4 and non-rounded */
       .paper { position: relative; }
+
+      .paper.letter-preview {
+        padding: 0;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+        background: transparent;
+        overflow: visible;
+      }
+
+      .paper.letter-preview .letter {
+        width: 210mm;
+        height: 297mm;
+        margin: 0 auto;
+      }
+
+      /* Ensure barcode/QR previews are not rounded */
+      .paper.letter-preview .barcode {
+        border-radius: 0 !important;
+      }
+
       .drag-barcode {
         position: absolute;
         width: var(--size, 96px);
@@ -26,8 +48,8 @@
         height: var(--size, 96px);
         object-fit: contain;
         border: 1px solid rgba(0, 0, 0, 0.12);
-        border-radius: 10px;
-        background: rgba(255, 255, 255, 0.7);
+        border-radius: 0;
+        background: #fff;
       }
       .status-pill {
         display: inline-flex;
@@ -57,7 +79,7 @@
           <img class="brand-logo" src="/logo.png" alt="AILO" />
           <div class="brand-text">
             <div class="brand-title">Web Mailer</div>
-            <div class="brand-subtitle"><%= currentUser.email %> • <%= currentUser.role %></div>
+        <div class="paper letter-preview">
           </div>
         </a>
 
