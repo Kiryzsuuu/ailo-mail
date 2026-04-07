@@ -65,11 +65,14 @@ function normalizeLetterInput(body) {
   };
 }
 
-async function renderLetterHtml({ kop, letter, withChrome }) {
+async function renderLetterHtml({ kop, letter, withChrome, embed }) {
   const css = await fs.readFile(letterCssPath, 'utf8');
 
   const template = String(letter.template || 'DEFAULT').toUpperCase();
-  const partialFile = template === 'DEFAULT' ? 'letter.ejs' : 'letter-task.ejs';
+  const isEmbed = Boolean(embed);
+  const partialFile = template === 'DEFAULT'
+    ? (isEmbed ? 'letter.fragment.ejs' : 'letter.ejs')
+    : (isEmbed ? 'letter-task.fragment.ejs' : 'letter-task.ejs');
 
   const tableConfig = tableConfigForTemplate(template);
   const tableRows = parseTableRows(letter.tableRowsRaw, tableConfig.columns);
@@ -78,7 +81,7 @@ async function renderLetterHtml({ kop, letter, withChrome }) {
   const safeBodyHtml = sanitizeRich(letter.bodyHtml) || textToHtml(letter.body);
   const safeRecipientAddressHtml = sanitizeRich(letter.recipientAddressHtml) || textToHtml(letter.recipientAddress);
 
-  return ejs.renderFile(path.join(viewsDir, 'partials', partialFile), {
+  const rendered = await ejs.renderFile(path.join(viewsDir, 'partials', partialFile), {
     kop,
     letter: {
       ...letter,
@@ -92,6 +95,14 @@ async function renderLetterHtml({ kop, letter, withChrome }) {
     letterFontFamily: letter.fontFamily || fontKeyToStack(letter.font || 'calibri'),
     withChrome: Boolean(withChrome),
   });
+
+  // In embed mode, we avoid returning a full HTML document. This makes it safe to inject into
+  // an existing page (e.g., views/preview.ejs) without the browser dropping <html>/<head>/<body>.
+  if (isEmbed) {
+    return `<style>\n${css}\n</style>\n${rendered}`;
+  }
+
+  return rendered;
 }
 
 function sanitizeRich(html) {

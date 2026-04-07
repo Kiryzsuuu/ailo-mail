@@ -6,7 +6,7 @@
   --letterLineHeight: 1.55;
   --letterParagraphGap: 0pt;
   --letterSectionGap: 0pt;
-  --telkomRed: #c80000;
+  --telkomRed: #E3000F;
 }
 
 * { box-sizing: border-box; }
@@ -251,25 +251,15 @@ html, body {
 
 .telkom-footer-band {
   margin-top: 6px;
-  height: 14mm;
+  height: 30px;
   width: 100%;
-  background: var(--telkomRed);
+  background: transparent;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
   position: relative;
   overflow: hidden;
-}
-
-.telkom-footer-band::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -1px;
-  height: 100%;
   background-repeat: no-repeat;
-  background-position: center top;
-  background-size: cover;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='220' viewBox='0 0 1200 220'%3E%3Cpath fill='%23ffffff' d='M0,80 C220,150 420,10 600,70 C780,130 980,40 1200,95 L1200,0 L0,0 Z'/%3E%3C/svg%3E");
-  opacity: 0.92;
+  background-position: center bottom;
+  background-size: 100% 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 40' preserveAspectRatio='none'%3E%3Cpath d='M0,20 Q500,50 1000,20 L1000,40 L0,40 Z' fill='%23E3000F'/%3E%3C/svg%3E");
 }

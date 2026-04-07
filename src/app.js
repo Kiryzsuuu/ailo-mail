@@ -1214,6 +1214,7 @@ app.get('/letters/:id/preview', requireAuth, async (req, res, next) => {
           signatures: signatureItems,
         },
         withChrome: false,
+        embed: true,
       });
 
     const isCreator = String(letter.createdBy) === String(currentUser._id);
