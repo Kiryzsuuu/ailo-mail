@@ -120,8 +120,8 @@
             Penerima
             <input name="recipient" placeholder="Contoh: Yth. Kepala ..." value="<%= defaults.recipient %>" />
           </label>
-          <label class="span-2">
-            Alamat Penerima (opsional)
+          <div class="span-2 field">
+            <div>Alamat Penerima (opsional)</div>
             <div class="paper" style="padding:12px; border-radius:12px">
               <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px">
                 <div class="muted small">Bisa bold/italic/underline, list, dan sisip foto.</div>
@@ -134,18 +134,18 @@
                 </div>
               </div>
 
-              <div contenteditable="true" id="recipientEditor" style="min-height:92px; outline:none"><%- (defaults.recipientAddressHtml || '') %></div>
+              <div contenteditable="true" class="rt-editor" id="recipientEditor" tabindex="0" style="min-height:92px; outline:none; cursor:text"><%- (defaults.recipientAddressHtml || '') %></div>
 
               <textarea class="hidden-field" name="recipientAddress" id="recipientAddress"><%= defaults.recipientAddress %></textarea>
               <textarea class="hidden-field" name="recipientAddressHtml" id="recipientAddressHtml"><%= defaults.recipientAddressHtml || '' %></textarea>
             </div>
-          </label>
+          </div>
         </div>
 
         <hr class="sep" />
 
-        <label>
-          Isi Surat
+        <div class="field">
+          <div>Isi Surat</div>
           <div class="paper" style="padding:12px; border-radius:12px">
             <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px">
               <div class="muted small">Gunakan toolbar untuk bold/italic/underline, list, dan sisip foto.</div>
@@ -158,12 +158,12 @@
               </div>
             </div>
 
-            <div contenteditable="true" id="bodyEditor" style="min-height:260px; outline:none"><%- (defaults.bodyHtml || '') %></div>
+            <div contenteditable="true" class="rt-editor" id="bodyEditor" tabindex="0" style="min-height:260px; outline:none; cursor:text"><%- (defaults.bodyHtml || '') %></div>
 
             <textarea class="hidden-field" name="body" id="body"><%= defaults.body %></textarea>
             <textarea class="hidden-field" name="bodyHtml" id="bodyHtml"><%= defaults.bodyHtml || '' %></textarea>
           </div>
-        </label>
+        </div>
 
         <div id="taskExtras" style="display:none">
           <hr class="sep" />
@@ -378,7 +378,10 @@
               input.accept = 'image/*';
               input.onchange = function () {
                 var file = input.files && input.files[0];
-                if (!file) return;
+                if (!file) {
+                  editor.focus();
+                  return;
+                }
                 var reader = new FileReader();
                 reader.onload = function () {
                   var src = String(reader.result || '');
@@ -396,10 +399,17 @@
                 };
                 reader.readAsDataURL(file);
               };
+              editor.focus();
               input.click();
             }
 
-            function syncEditors() {
+            var __syncTimer = null;
+            function syncEditorsImmediate() {
+              if (__syncTimer) {
+                clearTimeout(__syncTimer);
+                __syncTimer = null;
+              }
+
               var bodyEditor = document.getElementById('bodyEditor');
               var bodyHtml = document.getElementById('bodyHtml');
               var bodyPlain = document.getElementById('body');
@@ -417,6 +427,24 @@
               }
             }
 
+            function syncEditors() {
+              if (__syncTimer) clearTimeout(__syncTimer);
+              // Debounce: base64 images make innerHTML huge; syncing every keystroke causes lag.
+              __syncTimer = setTimeout(syncEditorsImmediate, 200);
+            }
+
+            function clearSelectedImages() {
+              var selected = document.querySelectorAll('.rt-editor img.rt-selected');
+              for (var i = 0; i < selected.length; i++) {
+                selected[i].classList.remove('rt-selected');
+              }
+            }
+
+            function selectImage(img) {
+              clearSelectedImages();
+              img.classList.add('rt-selected');
+            }
+
             document.addEventListener('click', function (e) {
               var btn = e.target && e.target.closest ? e.target.closest('button') : null;
               if (!btn) return;
@@ -424,8 +452,16 @@
               var cmd = btn.getAttribute('data-rt-cmd');
               if (cmd) {
                 e.preventDefault();
+                var editor = document.activeElement;
+                var isEditor = editor && (editor.id === 'recipientEditor' || editor.id === 'bodyEditor');
+                var editorId = isEditor ? editor.id : null;
                 exec(cmd);
                 syncEditors();
+                if (editorId) {
+                  var ed = document.getElementById(editorId);
+                  if (ed) ed.focus();
+                }
+                return;
               }
 
               var imgTarget = btn.getAttribute('data-rt-img');
@@ -433,21 +469,66 @@
                 e.preventDefault();
                 insertImage(imgTarget);
                 setTimeout(syncEditors, 0);
+                return;
               }
+            });
+
+            // Select images on click so user can delete them easily.
+            document.addEventListener('click', function (e) {
+              var img = e.target && e.target.tagName === 'IMG' ? e.target : null;
+              if (!img) return;
+              var editor = img.closest && img.closest('.rt-editor') ? img.closest('.rt-editor') : null;
+              if (!editor) return;
+              selectImage(img);
+            });
+
+            // Right-click delete on image.
+            document.addEventListener('contextmenu', function (e) {
+              var img = e.target && e.target.tagName === 'IMG' ? e.target : null;
+              if (!img) return;
+              var editor = img.closest && img.closest('.rt-editor') ? img.closest('.rt-editor') : null;
+              if (!editor) return;
+              e.preventDefault();
+              var ok = confirm('Hapus gambar ini?');
+              if (!ok) return;
+              img.remove();
+              syncEditorsImmediate();
+            });
+
+            // Delete/backspace removes selected images.
+            document.addEventListener('keydown', function (e) {
+              if (!(e.key === 'Delete' || e.key === 'Backspace')) return;
+              var active = document.activeElement;
+              var isEditor = active && (active.id === 'recipientEditor' || active.id === 'bodyEditor');
+              if (!isEditor) return;
+
+              var selected = active.querySelectorAll('img.rt-selected');
+              if (!selected || !selected.length) return;
+              e.preventDefault();
+              for (var i = 0; i < selected.length; i++) selected[i].remove();
+              syncEditorsImmediate();
             });
 
             var form = document.querySelector('form[action="/letters/preview"]');
             if (form) {
               form.addEventListener('submit', function () {
-                syncEditors();
+                syncEditorsImmediate();
               });
             }
 
             var bodyEditor = document.getElementById('bodyEditor');
-            if (bodyEditor) bodyEditor.addEventListener('input', syncEditors);
+            if (bodyEditor) {
+              bodyEditor.addEventListener('input', syncEditors);
+              bodyEditor.addEventListener('blur', syncEditorsImmediate);
+              bodyEditor.addEventListener('click', function() { this.focus(); });
+            }
             var recipientEditor = document.getElementById('recipientEditor');
-            if (recipientEditor) recipientEditor.addEventListener('input', syncEditors);
-            syncEditors();
+            if (recipientEditor) {
+              recipientEditor.addEventListener('input', syncEditors);
+              recipientEditor.addEventListener('blur', syncEditorsImmediate);
+              recipientEditor.addEventListener('click', function() { this.focus(); });
+            }
+            syncEditorsImmediate();
           })();
         </script>
       </main>

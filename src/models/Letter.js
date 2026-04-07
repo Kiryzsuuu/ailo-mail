@@ -22,6 +22,7 @@ const signatureEntrySchema = new mongoose.Schema(
     signedAt: { type: Date, required: true },
     token: { type: String, required: true },
     barcodePosition: { type: barcodePositionSchema, default: () => ({}) },
+    sizePt: { type: Number, default: 92 },
   },
   { _id: false }
 );
@@ -98,6 +99,7 @@ const letterSchema = new mongoose.Schema(
     // Legacy single signature (kept for backward compatibility)
     signatureToken: { type: String, default: '' },
     barcodePosition: { type: barcodePositionSchema, default: () => ({}) },
+    barcodeSizePt: { type: Number, default: 92 },
 
     // Multi signer signatures (preferred)
     signatures: { type: [signatureEntrySchema], default: () => [] },

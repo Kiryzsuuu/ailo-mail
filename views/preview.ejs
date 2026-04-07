@@ -10,8 +10,8 @@
       .paper { position: relative; }
       .drag-barcode {
         position: absolute;
-        width: 96px;
-        height: 96px;
+        width: var(--size, 96px);
+        height: var(--size, 96px);
         left: var(--x, 80%);
         top: var(--y, 86%);
         transform: translate(-50%, -50%);
@@ -19,10 +19,11 @@
         cursor: grab;
         user-select: none;
       }
+      .drag-barcode.hidden { display: none; }
       .drag-barcode:active { cursor: grabbing; }
       .drag-barcode img {
-        width: 96px;
-        height: 96px;
+        width: var(--size, 96px);
+        height: var(--size, 96px);
         object-fit: contain;
         border: 1px solid rgba(0, 0, 0, 0.12);
         border-radius: 10px;
@@ -142,10 +143,20 @@
         <% if (canApprove && showApprovePanel) { %>
           <div class="paper" style="margin-bottom:14px">
             <h3 style="margin:0 0 8px"><%= letter.status === 'APPROVED' ? 'Tambah Tanda Tangan (Barcode)' : 'Approve + Tanda Tangan (Barcode)' %></h3>
-            <p class="muted" style="margin:0 0 12px">Geser barcode di preview surat (di bawah) untuk menentukan posisi tanda tangan, lalu klik <%= letter.status === 'APPROVED' ? 'Tanda Tangan' : 'Approve' %>.</p>
+            <p class="muted" style="margin:0 0 12px">Klik "Generate Barcode" untuk memunculkan barcode (pending), geser posisinya di preview surat (di bawah), atur ukuran jika perlu, lalu klik <%= letter.status === 'APPROVED' ? 'Tanda Tangan' : 'Approve' %>.</p>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:0 0 10px">
+              <button class="btn ghost" type="button" id="btnGenerateBarcode">Generate Barcode</button>
+              <label class="muted small" style="display:flex; align-items:center; gap:8px">
+                Ukuran
+                <input id="sizePt" name="sizePt" type="number" min="48" max="160" step="1" value="<%= Number(letter.barcodeSizePt || 92) %>" style="width:90px" />
+                pt
+              </label>
+              <span class="muted small">(48–160 pt)</span>
+            </div>
             <form action="/letters/<%= letter._id %>/approve" method="post" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
               <input type="hidden" name="xPct" id="xPct" value="<%= letter.barcodePosition?.xPct ?? 80 %>" />
               <input type="hidden" name="yPct" id="yPct" value="<%= letter.barcodePosition?.yPct ?? 86 %>" />
+              <input type="hidden" name="sizePt" id="sizePtHidden" value="<%= Number(letter.barcodeSizePt || 92) %>" />
               <button class="btn" type="submit"><%= letter.status === 'APPROVED' ? 'Tanda Tangan' : 'Approve & Sign' %></button>
               <span class="muted small">(Posisi tersimpan otomatis dari drag)</span>
             </form>
@@ -163,7 +174,7 @@
           <%- html %>
 
           <% if (canApprove && showApprovePanel) { %>
-            <div class="drag-barcode" id="dragBarcode" style="--x:<%= (letter.barcodePosition?.xPct ?? 80) %>%; --y:<%= (letter.barcodePosition?.yPct ?? 86) %>%">
+            <div class="drag-barcode hidden" id="dragBarcode" style="--x:<%= (letter.barcodePosition?.xPct ?? 80) %>%; --y:<%= (letter.barcodePosition?.yPct ?? 86) %>%; --size:<%= Number(letter.barcodeSizePt || 92) %>pt">
               <img src="<%= barcodePreviewDataUrl %>" alt="Barcode" />
             </div>
           <% } %>
@@ -177,6 +188,10 @@
           var el = document.getElementById('dragBarcode');
           if (!el) return;
 
+          var btn = document.getElementById('btnGenerateBarcode');
+          var sizeInput = document.getElementById('sizePt');
+          var sizeHidden = document.getElementById('sizePtHidden');
+
           var xInput = document.getElementById('xPct');
           var yInput = document.getElementById('yPct');
 
@@ -187,6 +202,21 @@
           var dragging = false;
 
           function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+          function syncSize() {
+            if (!sizeInput) return;
+            var n = Number(sizeInput.value);
+            if (!isFinite(n)) n = 92;
+            n = clamp(n, 48, 160);
+            sizeInput.value = String(Math.round(n));
+            el.style.setProperty('--size', n + 'pt');
+            if (sizeHidden) sizeHidden.value = String(Math.round(n));
+          }
+
+          if (sizeInput) {
+            sizeInput.addEventListener('change', syncSize);
+            sizeInput.addEventListener('input', syncSize);
+          }
 
           function setPosFromClient(clientX, clientY) {
             var rect = letterEl.getBoundingClientRect();
@@ -217,6 +247,34 @@
             dragging = false;
             ev.preventDefault();
           });
+
+          function ensureVisible() {
+            if (el.classList.contains('hidden')) el.classList.remove('hidden');
+          }
+
+          async function generateBarcode() {
+            syncSize();
+            ensureVisible();
+            try {
+              var res = await fetch('/letters/<%= letter._id %>/barcode/pending');
+              var json = await res.json();
+              if (json && json.ok && json.dataUrl) {
+                var img = el.querySelector('img');
+                if (img) img.src = String(json.dataUrl);
+              }
+            } catch (e) {
+              // ignore
+            }
+          }
+
+          if (btn) {
+            btn.addEventListener('click', function () {
+              generateBarcode();
+            });
+          }
+
+          // Keep size applied on load
+          syncSize();
         })();
       </script>
     <% } %>

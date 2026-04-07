@@ -7,6 +7,7 @@
     "dev": "cross-env NODE_ENV=development DEBUG_ROUTES=1 LOG_HTTP=1 nodemon src/server.js",
     "start": "node src/server.js",
     "seed:superadmin": "node scripts/seed-superadmin.js",
+    "seed:sample-letter": "node scripts/seed-sample-letter.js",
     "examples:generate": "node scripts/generate-letter-examples.js",
     "test:e2e": "node scripts/e2e-smoke.js"
   },

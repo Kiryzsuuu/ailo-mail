@@ -959,6 +959,9 @@ app.post('/letters/:id/approve', requireRole(['SUPREME', 'SUPERADMIN']), async (
     const xPct = Number.isFinite(xPctRaw) ? Math.max(0, Math.min(100, xPctRaw)) : 80;
     const yPct = Number.isFinite(yPctRaw) ? Math.max(0, Math.min(100, yPctRaw)) : 86;
 
+    const sizePtRaw = Number(req.body.sizePt);
+    const sizePt = Number.isFinite(sizePtRaw) ? Math.max(48, Math.min(160, sizePtRaw)) : 92;
+
     const approvedAt = new Date();
     const signatureId = crypto.randomUUID();
     const token = signToken(
@@ -977,6 +980,7 @@ app.post('/letters/:id/approve', requireRole(['SUPREME', 'SUPERADMIN']), async (
     // Keep legacy fields updated with the latest signature for backward compatibility
     letter.signatureToken = token;
     letter.barcodePosition = { xPct, yPct };
+    letter.barcodeSizePt = sizePt;
 
     if (!Array.isArray(letter.signatures)) letter.signatures = [];
     letter.signatures.push({
@@ -986,6 +990,7 @@ app.post('/letters/:id/approve', requireRole(['SUPREME', 'SUPERADMIN']), async (
       signedAt: approvedAt,
       token,
       barcodePosition: { xPct, yPct },
+      sizePt,
     });
 
     const requiredCountRaw = Number(letter.requiredSupremeSignatures);
@@ -1008,10 +1013,23 @@ app.post('/letters/:id/approve', requireRole(['SUPREME', 'SUPERADMIN']), async (
       action: 'letter.approved',
       statusCode: 302,
       targetLetterId: letter._id,
-      meta: { xPct, yPct },
+      meta: { xPct, yPct, sizePt },
     });
 
     return res.redirect(`/letters/${letter._id}/preview`);
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/letters/:id/barcode/pending', requireRole(['SUPREME', 'SUPERADMIN']), async (req, res, next) => {
+  try {
+    const letter = await Letter.findById(req.params.id).select('_id status').lean();
+    if (!letter) return res.status(404).json({ ok: false, error: 'Surat tidak ditemukan.' });
+
+    const baseUrl = getBaseUrl(req);
+    const dataUrl = await qrDataUrl(`${baseUrl}/verify/pending`);
+    return res.json({ ok: true, dataUrl });
   } catch (error) {
     next(error);
   }
@@ -1084,11 +1102,16 @@ app.post('/letters/:id/barcode-position', requireRole(['SUPREME', 'SUPERADMIN'])
     const xPct = Number.isFinite(xPctRaw) ? Math.max(0, Math.min(100, xPctRaw)) : 80;
     const yPct = Number.isFinite(yPctRaw) ? Math.max(0, Math.min(100, yPctRaw)) : 86;
 
+    const sizePtRaw = Number(req.body.sizePt);
+    const sizePt = Number.isFinite(sizePtRaw) ? Math.max(48, Math.min(160, sizePtRaw)) : null;
+
     sig.barcodePosition = { xPct, yPct };
+    if (sizePt != null) sig.sizePt = sizePt;
 
     // keep legacy position in sync for older renders (best-effort)
     if (letter.signatureToken && String(letter.signatureToken) === String(sig.token)) {
       letter.barcodePosition = { xPct, yPct };
+      if (sizePt != null) letter.barcodeSizePt = sizePt;
     }
     await letter.save();
 
@@ -1098,10 +1121,10 @@ app.post('/letters/:id/barcode-position', requireRole(['SUPREME', 'SUPERADMIN'])
       action: 'letter.barcode_position_updated',
       statusCode: 200,
       targetLetterId: letter._id,
-      meta: { xPct, yPct },
+      meta: { xPct, yPct, sizePt },
     });
 
-    return res.json({ ok: true, signatureId, xPct, yPct });
+    return res.json({ ok: true, signatureId, xPct, yPct, sizePt });
   } catch (error) {
     next(error);
   }
@@ -1158,6 +1181,7 @@ app.get('/letters/:id/preview', requireAuth, async (req, res, next) => {
         token: String(s.token || ''),
         barcodeDataUrl: dataUrl,
         barcodePosition: s.barcodePosition || {},
+        sizePt: Number(s.sizePt || 92),
       });
     }
 
@@ -1275,6 +1299,7 @@ app.get('/letters/:id/pdf', requireAuth, async (req, res, next) => {
         token: String(s.token || ''),
         barcodeDataUrl: dataUrl,
         barcodePosition: s.barcodePosition || {},
+        sizePt: Number(s.sizePt || 92),
       });
     }
 
@@ -1298,7 +1323,13 @@ app.get('/letters/:id/pdf', requireAuth, async (req, res, next) => {
         const qr = s.token ? await qrDataUrl(verifyUrl) : '';
         const x = Number(s.barcodePosition?.xPct);
         const y = Number(s.barcodePosition?.yPct);
-        stamps.push({ qrDataUrl: qr, xPct: Number.isFinite(x) ? x : 80, yPct: Number.isFinite(y) ? y : 86, sizePt: 92 });
+        const sizePt = Number(s.sizePt || letter.barcodeSizePt || 92);
+        stamps.push({
+          qrDataUrl: qr,
+          xPct: Number.isFinite(x) ? x : 80,
+          yPct: Number.isFinite(y) ? y : 86,
+          sizePt,
+        });
       }
 
       // Legacy single signature fallback
@@ -1307,7 +1338,13 @@ app.get('/letters/:id/pdf', requireAuth, async (req, res, next) => {
         const qr = await qrDataUrl(verifyUrl);
         const x = Number(letter.barcodePosition?.xPct);
         const y = Number(letter.barcodePosition?.yPct);
-        stamps.push({ qrDataUrl: qr, xPct: Number.isFinite(x) ? x : 80, yPct: Number.isFinite(y) ? y : 86, sizePt: 92 });
+        const sizePt = Number(letter.barcodeSizePt || 92);
+        stamps.push({
+          qrDataUrl: qr,
+          xPct: Number.isFinite(x) ? x : 80,
+          yPct: Number.isFinite(y) ? y : 86,
+          sizePt,
+        });
       }
 
       pdfBuffer = await stampPdfWithQrs({ pdfBuffer: sourcePdf, stamps });

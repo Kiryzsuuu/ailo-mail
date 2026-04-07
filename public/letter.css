@@ -27,16 +27,21 @@ html, body {
 @media screen {
   .letter {
     width: 210mm;
-    min-height: 297mm;
+    height: 297mm;
     margin: 10mm auto;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
   }
 }
 
 @media print {
   .letter {
     width: auto;
-    min-height: auto;
+    height: auto;
     margin: 0;
+    display: flex;
+    flex-direction: column;
   }
 }
 
@@ -44,6 +49,9 @@ html, body {
   font-size: var(--letterFontSize, 12pt);
   line-height: var(--letterLineHeight, 1.55);
   position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .content > p,
@@ -80,13 +88,27 @@ html, body {
 
 .kop {
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: center;
+  padding-top: 12.5mm;
+  padding-bottom: 0;
+  flex-shrink: 0;
+}
+
+.kop--image {
+  display: block;
+  width: 100%;
+}
+
+.kop-header {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 60mm;
 }
 
 .kop--simple {
-  padding-top: 2mm;
-  padding-bottom: 6mm;
+  justify-content: center;
 }
 
 .kop-logo {
@@ -107,7 +129,8 @@ html, body {
 .sep-dot { margin: 0 8px; }
 
 .letter-head {
-  margin-top: 14px;
+  margin-top: 0;
+  margin-bottom: 14px;
 }
 
 .letter-date { text-align: right; margin-bottom: 10px; }
@@ -133,8 +156,9 @@ html, body {
 .recipient-address { margin-top: 4px; }
 
 .content {
-  min-height: 260px;
+  flex: 1;
   text-align: justify;
+  margin-bottom: 14px;
 }
 
 .sign {
@@ -181,16 +205,25 @@ html, body {
 
 .barcode {
   position: absolute;
-  width: 96px;
-  height: 96px;
+  width: var(--barcodeSize, 96px);
+  height: var(--barcodeSize, 96px);
   object-fit: contain;
   transform: translate(-50%, -50%);
 }
 
+.letter-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
 .telkom-footer {
-  margin-top: 14px;
+  margin-top: auto;
   padding-top: 8px;
+  padding-bottom: 12.5mm;
   border-top: 1px solid rgba(17, 17, 17, 0.45);
+  flex-shrink: 0;
 }
 
 .telkom-footer-text {

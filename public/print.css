@@ -175,6 +175,13 @@ label {
   font-weight: 700;
 }
 
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 input, textarea, select {
   width: 100%;
   border: 1px solid var(--line);
@@ -193,6 +200,28 @@ button {
 
 input::placeholder, textarea::placeholder { color: rgba(11, 19, 32, 0.40); }
 textarea { resize: vertical; }
+
+[contenteditable="true"] {
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.rt-editor {
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.rt-editor img {
+  max-width: 100%;
+  height: auto;
+}
+
+.rt-editor img.rt-selected {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
 
 .span-2 { grid-column: span 2; }
 

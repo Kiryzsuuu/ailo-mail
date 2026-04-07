@@ -69,12 +69,13 @@
     <div class="letter">
       <%- include('./kop', { kop }) %>
 
-      <div class="doc-title"><%= (letter.tableConfig && letter.tableConfig.title) ? letter.tableConfig.title : 'SURAT TUGAS' %></div>
-      <div class="doc-number"><%= (letter.tableConfig && letter.tableConfig.numberLabel) ? letter.tableConfig.numberLabel : 'Nomor' %>: <%= letter.number || '-' %></div>
+      <div class="letter-body">
+        <div class="doc-title"><%= (letter.tableConfig && letter.tableConfig.title) ? letter.tableConfig.title : 'SURAT TUGAS' %></div>
+        <div class="doc-number"><%= (letter.tableConfig && letter.tableConfig.numberLabel) ? letter.tableConfig.numberLabel : 'Nomor' %>: <%= letter.number || '-' %></div>
 
-      <div class="content" style="min-height:unset">
-        <%- letter.bodyHtml || '' %>
-      </div>
+        <div class="content">
+          <%- letter.bodyHtml || '' %>
+        </div>
 
       <div class="st-meta">
         <table class="kv">
@@ -125,15 +126,16 @@
         </table>
       <% } %>
 
-      <div style="margin-top:14px"><%= letter.closing || '' %></div>
+        <div style="margin-top:14px"><%= letter.closing || '' %></div>
 
-      <div class="sign" style="margin-left:auto">
-        <div style="text-align:left"><%= letter.place %>, <%= letter.formattedDate %></div>
-        <div class="sign-space"></div>
-        <div><strong><%= letter.signatoryName || '' %></strong></div>
-        <% if (letter.signatoryNip) { %>
-          <div style="margin-top:2px">NIP. <%= letter.signatoryNip %></div>
-        <% } %>
+        <div class="sign" style="margin-left:auto">
+          <div style="text-align:left"><%= letter.place %>, <%= letter.formattedDate %></div>
+          <div class="sign-space"></div>
+          <div><strong><%= letter.signatoryName || '' %></strong></div>
+          <% if (letter.signatoryNip) { %>
+            <div style="margin-top:2px">NIP. <%= letter.signatoryNip %></div>
+          <% } %>
+        </div>
       </div>
 
       <% if (Array.isArray(letter.signatures) && letter.signatures.length > 0) { %>
@@ -141,26 +143,28 @@
           <% if (!s || !s.barcodeDataUrl) continue; %>
           <% const x = Number(s.barcodePosition?.xPct ?? 80); %>
           <% const y = Number(s.barcodePosition?.yPct ?? 86); %>
+          <% const sizePt = Number(s.sizePt ?? letter.barcodeSizePt ?? 92); %>
           <img
             class="barcode"
             data-signature-id="<%= s.signatureId %>"
             src="<%= s.barcodeDataUrl %>"
             alt="Tanda tangan (barcode)"
-            style="left:<%= isFinite(x) ? x : 80 %>%; top:<%= isFinite(y) ? y : 86 %>%"
+            style="left:<%= isFinite(x) ? x : 80 %>%; top:<%= isFinite(y) ? y : 86 %>%; --barcodeSize:<%= isFinite(sizePt) ? sizePt : 92 %>pt"
           />
         <% } %>
       <% } else if (letter.barcodeDataUrl) { %>
         <% const x = Number(letter.barcodePosition?.xPct ?? 80); %>
         <% const y = Number(letter.barcodePosition?.yPct ?? 86); %>
+        <% const sizePt = Number(letter.barcodeSizePt ?? 92); %>
         <img
           class="barcode"
           src="<%= letter.barcodeDataUrl %>"
           alt="Tanda tangan (barcode)"
-          style="left:<%= isFinite(x) ? x : 80 %>%; top:<%= isFinite(y) ? y : 86 %>%"
+          style="left:<%= isFinite(x) ? x : 80 %>%; top:<%= isFinite(y) ? y : 86 %>%; --barcodeSize:<%= isFinite(sizePt) ? sizePt : 92 %>pt"
         />
       <% } %>
 
-      <div class="telkom-footer">
+      <div class="telkom-footer" style="margin-top:auto;">
         <div class="telkom-footer-text">
           <% const lines = (kop && Array.isArray(kop.footerLines) && kop.footerLines.length) ? kop.footerLines : []; %>
           <% if (lines.length) { %>
@@ -176,4 +180,5 @@
       </div>
     </div>
   </body>
+</html>
 </html>

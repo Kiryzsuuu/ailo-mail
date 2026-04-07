@@ -5,6 +5,7 @@ const path = require('path');
 const { getKopConfig } = require('../src/lib/kopConfig');
 const { renderLetterHtml } = require('../src/lib/renderLetter');
 const { generatePdfBuffer } = require('../src/lib/pdf');
+const { qrDataUrl } = require('../src/lib/signature');
 
 function nowIsoDate() {
   return new Date().toISOString().slice(0, 10);
@@ -164,6 +165,36 @@ function examples() {
         ].join('\n'),
       },
     },
+
+    {
+      key: 'surat-tugas-ttd',
+      filename: '07-surat-tugas-ttd',
+      letter: {
+        ...base,
+        template: 'SURAT_TUGAS',
+        number: '111/SDM4/AI-Center/2025',
+        body: [
+          'Pada hari Senin, tanggal 27 Oktober 2025 bertempat di Universitas Telkom, saya yang bertanda tangan di bawah ini:',
+          '<div style="margin-top:6px"><em>Dokumen ini berisi contoh penempatan tanda tangan elektronik (QR).</em></div>',
+        ].join('\n'),
+        tableRowsRaw: [
+          'Agnes Gabriela Putri Winata|103062300117',
+          'Muhammad Raia Pratama Putra Wibowo|103062300043',
+          'David Chandra|103062330056',
+        ].join('\n'),
+        detailsRaw: [
+          'Tanggal: 28 – 30 Oktober 2025',
+          'Tempat: Jakarta International Expo – Kemayoran',
+        ].join('\n'),
+        signatures: [
+          {
+            signatureId: 'example-signature-1',
+            token: 'example-token-07-surat-tugas-ttd',
+            barcodePosition: { xPct: 80, yPct: 82 },
+          },
+        ],
+      },
+    },
   ];
 }
 
@@ -175,7 +206,26 @@ async function main() {
 
   const items = examples();
   for (const item of items) {
-    const html = await renderLetterHtml({ kop, letter: item.letter, withChrome: false });
+    // Populate signature barcodes for static examples
+    const letter = { ...item.letter };
+    if (Array.isArray(letter.signatures) && letter.signatures.length > 0) {
+      const sigs = [];
+      for (const s of letter.signatures) {
+        const token = String(s.token || '');
+        const verifyUrl = token
+          ? `https://example.invalid/verify/${encodeURIComponent(token)}`
+          : 'https://example.invalid/verify/pending';
+        const dataUrl = await qrDataUrl(verifyUrl);
+        sigs.push({
+          ...s,
+          token,
+          barcodeDataUrl: dataUrl,
+        });
+      }
+      letter.signatures = sigs;
+    }
+
+    const html = await renderLetterHtml({ kop, letter, withChrome: false });
     const htmlPath = path.join(outDir, `${item.filename}.html`);
     await fs.writeFile(htmlPath, html, 'utf8');
 
