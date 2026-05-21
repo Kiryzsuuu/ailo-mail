@@ -163,16 +163,6 @@ app.get('/logo.png', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'logo.png'));
 });
 
-app.get('/hero-portrait.png', (req, res) => {
-  res.sendFile(
-    path.join(
-      __dirname,
-      '..',
-      'Gemini_Generated_Image_in3s0kin3s0kin3s.png'
-    )
-  );
-});
-
 app.get('/hero-tile-1.jpg', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'assets', 'hero-tile-1.jpg'));
 });
@@ -196,10 +186,6 @@ app.get('/', requireAuth, async (req, res, next) => {
 
 // Login page - ALWAYS render form (no redirect)
 app.get('/login', (req, res) => {
-  if (shouldLogHttp) {
-    // eslint-disable-next-line no-console
-    console.log('[route] GET /login handler hit');
-  }
   return res.render('login', { error: '' });
 });
 
@@ -398,7 +384,6 @@ app.post('/verify-otp', async (req, res, next) => {
     if (purpose === 'change-email') {
       const userId = req.session?.userId;
       const pendingEmail = String(req.session?.pendingEmail || '').trim().toLowerCase();
-      console.log(`[OTP Verify] change-email START userId=${userId}, pendingEmail=${pendingEmail}`);
 
       if (!userId || !pendingEmail) {
         return res.status(400).render('verify-otp', { email, purpose, error: 'Permintaan ganti email tidak ditemukan. Silakan ulangi dari halaman profile.', info: '' });
@@ -427,7 +412,6 @@ app.post('/verify-otp', async (req, res, next) => {
       }
 
       await User.findByIdAndUpdate(userId, { email: pendingEmail, emailVerified: true });
-      console.log(`[OTP Verify] change-email SUCCESS userId=${userId}, newEmail=${pendingEmail}`);
 
       await logActivity({
         req,
@@ -470,13 +454,11 @@ app.post('/verify-otp', async (req, res, next) => {
     }
 
     req.session.userId = String(user._id);
-    console.log('[OTP Verify] Session userId set:', req.session.userId);
     req.session.save((err) => {
       if (err) {
         console.error('[OTP Verify] Session save error:', err);
         return res.status(500).render('verify-otp', { email, purpose, error: 'Save session gagal', info: '' });
       }
-      console.log('[OTP Verify] Session saved, redirecting to /');
       logActivity({
         req,
         actor: actorFromUser(user),
@@ -496,9 +478,6 @@ app.post('/verify-otp', async (req, res, next) => {
 
 // Profile - edit user profile
 app.get('/profile', requireAuth, (req, res) => {
-  const userId = res.locals.currentUser._id;
-  const userEmail = res.locals.currentUser.email;
-  console.log(`[GET /profile] userId=${userId}, email=${userEmail}`);
   res.render('profile', {
     currentUser: res.locals.currentUser,
     errors: [],
@@ -509,21 +488,16 @@ app.get('/profile', requireAuth, (req, res) => {
 app.post('/profile', requireAuth, async (req, res, next) => {
   try {
     const currentUser = res.locals.currentUser;
-    const userId = currentUser._id;
-    const userEmail = currentUser.email;
     const name = String(req.body.name || '').trim();
-    console.log(`[POST /profile] UPDATE NAME START userId=${userId}, email=${userEmail}`);
 
     const errors = [];
     if (!name) errors.push('Nama tidak boleh kosong.');
 
     if (errors.length > 0) {
-      console.log(`[POST /profile] VALIDATION ERROR userId=${userId}: ${errors.join(' | ')}`);
       return res.render('profile', { currentUser, errors, success: false });
     }
 
     await User.findByIdAndUpdate(currentUser._id, { name });
-    console.log(`[POST /profile] NAME UPDATED userId=${userId}, name=${name}`);
 
     await logActivity({
       req,
@@ -534,10 +508,8 @@ app.post('/profile', requireAuth, async (req, res, next) => {
     });
 
     const updatedUser = await User.findById(currentUser._id).lean();
-    console.log(`[POST /profile] SUCCESS userId=${userId}`);
     return res.render('profile', { currentUser: updatedUser, errors: [], success: true });
   } catch (error) {
-    console.error('[POST /profile] EXCEPTION:', error.message);
     next(error);
   }
 });
@@ -545,14 +517,10 @@ app.post('/profile', requireAuth, async (req, res, next) => {
 app.post('/profile/password', requireAuth, async (req, res, next) => {
   try {
     const currentUser = res.locals.currentUser;
-    const userId = currentUser._id;
-    const userEmail = currentUser.email;
 
     const currentPassword = String(req.body.currentPassword || '');
     const newPassword = String(req.body.newPassword || '');
     const confirmPassword = String(req.body.confirmPassword || '');
-
-    console.log(`[POST /profile/password] START userId=${userId}, email=${userEmail}`);
 
     const errors = [];
     if (!currentPassword) errors.push('Password saat ini wajib diisi.');
@@ -560,25 +528,21 @@ app.post('/profile/password', requireAuth, async (req, res, next) => {
     if (newPassword !== confirmPassword) errors.push('Password baru dan konfirmasi tidak cocok.');
 
     if (errors.length > 0) {
-      console.log(`[POST /profile/password] VALIDATION ERROR userId=${userId}: ${errors.join(' | ')}`);
       return res.render('profile', { currentUser, errors, success: false });
     }
 
     const user = await User.findById(currentUser._id);
     if (!user) {
-      console.error(`[POST /profile/password] USER NOT FOUND userId=${userId}`);
       return res.status(401).render('profile', { currentUser, errors: ['User tidak ditemukan.'], success: false });
     }
 
     const ok = await verifyPassword(currentPassword, user.passwordHash);
     if (!ok) {
-      console.log(`[POST /profile/password] PASSWORD MISMATCH userId=${userId}`);
       return res.render('profile', { currentUser, errors: ['Password saat ini tidak cocok.'], success: false });
     }
 
     user.passwordHash = await hashPassword(newPassword);
     await user.save();
-    console.log(`[POST /profile/password] SUCCESS userId=${userId}`);
 
     await logActivity({
       req,
@@ -591,7 +555,6 @@ app.post('/profile/password', requireAuth, async (req, res, next) => {
     const updatedUser = await User.findById(currentUser._id).lean();
     return res.render('profile', { currentUser: updatedUser, errors: [], success: true });
   } catch (error) {
-    console.error('[POST /profile/password] EXCEPTION:', error.message);
     next(error);
   }
 });
@@ -600,12 +563,9 @@ app.post('/profile/request-email-change', requireAuth, async (req, res, next) =>
   try {
     const currentUser = res.locals.currentUser;
     const userId = currentUser._id;
-    const userEmail = currentUser.email;
 
     const newEmail = String(req.body.newEmail || '').trim().toLowerCase();
     const currentPassword = String(req.body.currentPassword || '');
-
-    console.log(`[POST /profile/request-email-change] START userId=${userId}, email=${userEmail}, newEmail=${newEmail}`);
 
     const errors = [];
     if (!newEmail) errors.push('Email baru wajib diisi.');
@@ -624,15 +584,12 @@ app.post('/profile/request-email-change', requireAuth, async (req, res, next) =>
     }
 
     if (errors.length > 0) {
-      console.log(`[POST /profile/request-email-change] VALIDATION ERROR userId=${userId}: ${errors.join(' | ')}`);
       return res.render('profile', { currentUser, errors, success: false });
     }
 
-    // Store pending email in session and send OTP to new email
     req.session.pendingEmail = newEmail;
     const otp = await createOtp({ userId, purpose: 'change-email' });
     await sendOtpEmail({ to: newEmail, code: otp.code, purpose: 'change-email' });
-    console.log(`[POST /profile/request-email-change] OTP SENT userId=${userId}, to=${newEmail}`);
 
     await logActivity({
       req,
@@ -644,7 +601,6 @@ app.post('/profile/request-email-change', requireAuth, async (req, res, next) =>
 
     return req.session.save((err) => {
       if (err) {
-        console.error('[POST /profile/request-email-change] Session save error:', err);
         return res.render('profile', { currentUser, errors: ['Gagal menyimpan sesi. Silakan coba lagi.'], success: false });
       }
       return res.render('verify-otp', {
@@ -655,100 +611,50 @@ app.post('/profile/request-email-change', requireAuth, async (req, res, next) =>
       });
     });
   } catch (error) {
-    console.error('[POST /profile/request-email-change] EXCEPTION:', error.message);
     next(error);
   }
 });
 
 app.post('/logout', (req, res, next) => {
-  const sessionId = req.sessionID;
-  const userId = req.session?.userId || 'unknown';
-  console.log(`[POST /logout] START sessionId=${sessionId}, userId=${userId}`);
-  
-  // Explicit session userId clear
+  const doLogout = () => {
+    res.setHeader('Clear-Site-Data', '"cookies"');
+    res.clearCookie('connect.sid', { path: '/', httpOnly: true, sameSite: 'lax' });
+    res.clearCookie('connect.sid', { path: '/', httpOnly: false });
+    res.clearCookie('connect.sid');
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate, private, max-age=0');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.set('Surrogate-Control', 'no-store');
+    logActivity({ req, actor: actorFromUser(res.locals.currentUser), action: 'auth.logout', statusCode: 303, meta: {} });
+    return res.redirect(303, '/login');
+  };
+
   if (req.session) {
     req.session.userId = null;
-    req.session.destroy((sessionErr) => {
-      if (sessionErr) {
-        console.error(`[POST /logout] Session destroy FAILED sessionId=${sessionId}:`, sessionErr.message);
-        // Even if destroy fails, still clear cookies and redirect
-      } else {
-        console.log(`[POST /logout] Session DESTROYED sessionId=${sessionId}`);
-      }
-      
-      // Aggressive cookie clearing to prevent stale session
-      res.setHeader('Clear-Site-Data', '"cookies"');
-      res.clearCookie('connect.sid', { path: '/', httpOnly: true, sameSite: 'lax' });
-      res.clearCookie('connect.sid', { path: '/', httpOnly: false });
-      res.clearCookie('connect.sid');
-      
-      // Cache headers to prevent browser cache
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate, private, max-age=0');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
-      res.set('Surrogate-Control', 'no-store');
-      
-      console.log(`[POST /logout] REDIRECT to /login sessionId=${sessionId}`);
-      logActivity({
-        req,
-        actor: actorFromUser(res.locals.currentUser),
-        action: 'auth.logout',
-        statusCode: 303,
-        meta: {},
-      });
-      return res.redirect(303, '/login');
-    });
+    req.session.destroy(() => doLogout());
   } else {
-    // No session at all, just redirect
-    console.log(`[POST /logout] NO SESSION - direct redirect sessionId=${sessionId}`);
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    logActivity({
-      req,
-      actor: actorFromUser(res.locals.currentUser),
-      action: 'auth.logout',
-      statusCode: 303,
-      meta: {},
-    });
-    return res.redirect(303, '/login');
+    doLogout();
   }
 });
 
 app.get('/logout', (req, res, next) => {
-  const sessionId = req.sessionID;
-  const userId = req.session?.userId || 'unknown';
-  console.log(`[GET /logout] START sessionId=${sessionId}, userId=${userId}`);
-  
-  // Explicit session userId clear
+  const doLogout = () => {
+    res.setHeader('Clear-Site-Data', '"cookies"');
+    res.clearCookie('connect.sid', { path: '/', httpOnly: true, sameSite: 'lax' });
+    res.clearCookie('connect.sid', { path: '/', httpOnly: false });
+    res.clearCookie('connect.sid');
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate, private, max-age=0');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.set('Surrogate-Control', 'no-store');
+    return res.redirect(303, '/login');
+  };
+
   if (req.session) {
     req.session.userId = null;
-    req.session.destroy((sessionErr) => {
-      if (sessionErr) {
-        console.error(`[GET /logout] Session destroy FAILED sessionId=${sessionId}:`, sessionErr.message);
-        // Even if destroy fails, still clear cookies and redirect
-      } else {
-        console.log(`[GET /logout] Session DESTROYED sessionId=${sessionId}`);
-      }
-      
-      // Aggressive cookie clearing
-      res.setHeader('Clear-Site-Data', '"cookies"');
-      res.clearCookie('connect.sid', { path: '/', httpOnly: true, sameSite: 'lax' });
-      res.clearCookie('connect.sid', { path: '/', httpOnly: false });
-      res.clearCookie('connect.sid');
-      
-      // Cache headers
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate, private, max-age=0');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
-      res.set('Surrogate-Control', 'no-store');
-      
-      console.log(`[GET /logout] REDIRECT to /login sessionId=${sessionId}`);
-      return res.redirect(303, '/login');
-    });
+    req.session.destroy(() => doLogout());
   } else {
-    // No session at all
-    console.log(`[GET /logout] NO SESSION - direct redirect sessionId=${sessionId}`);
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    return res.redirect(303, '/login');
+    doLogout();
   }
 });
 
@@ -1621,6 +1527,195 @@ app.get('/verify/:token', async (req, res, next) => {
     next(error);
   }
 });
+
+// ─── Certificate System ──────────────────────────────────────────────────────
+{
+  const CertTemplate = require('./models/CertTemplate');
+  const { generateOneCertPdf, generateBulkCertPdf, toDataUrl, fieldLabel, FIELD_LABELS } = require('./lib/certPdf');
+  const xlsx = require('xlsx');
+
+  const certBgRoot = path.join(__dirname, '..', '..', 'uploads', 'cert-bg');
+  try { fs.mkdirSync(certBgRoot, { recursive: true }); } catch (_) {}
+
+  const certBgUpload = multer({
+    storage: multer.diskStorage({
+      destination: (_req, _file, cb) => cb(null, certBgRoot),
+      filename: (_req, _file, cb) => cb(null, `${crypto.randomUUID()}.png`),
+    }),
+    limits: { fileSize: 20 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+      const ok = /^image\/(png|jpeg|webp)$/.test(file.mimetype);
+      cb(ok ? null : new Error('Hanya gambar PNG/JPG/WEBP.'), ok);
+    },
+  });
+
+  const xlsxUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+  });
+
+  const isAdmin = requireRole('ADMIN');
+
+  // List templates
+  app.get('/cert', requireAuth, async (req, res, next) => {
+    try {
+      const templates = await CertTemplate.find().sort({ createdAt: -1 }).lean();
+      res.render('cert/list', { currentUser: req.user, active: 'cert', templates });
+    } catch (e) { next(e); }
+  });
+
+  // New template form
+  app.get('/cert/new', requireAuth, isAdmin, (req, res) => {
+    res.render('cert/designer', {
+      currentUser: req.user,
+      active: 'cert',
+      template: { _id: '', name: '', orientation: 'landscape', bgColor: '#ffffff', backgroundPath: '', elements: [] },
+    });
+  });
+
+  // Edit template form
+  app.get('/cert/:id/edit', requireAuth, isAdmin, async (req, res, next) => {
+    try {
+      const template = await CertTemplate.findById(req.params.id).lean();
+      if (!template) return res.status(404).send('Template tidak ditemukan.');
+      res.render('cert/designer', { currentUser: req.user, active: 'cert', template });
+    } catch (e) { next(e); }
+  });
+
+  // Save / create template (multipart because background image optional)
+  app.post('/cert/save', requireAuth, isAdmin, certBgUpload.single('bgFile'), async (req, res, next) => {
+    try {
+      const { id, name, orientation, bgColor, elements: elementsJson } = req.body;
+      const elements = JSON.parse(elementsJson || '[]');
+
+      let backgroundPath = req.body.existingBgPath || '';
+      if (req.file) backgroundPath = req.file.path;
+
+      if (id) {
+        await CertTemplate.findByIdAndUpdate(id, { name, orientation, bgColor, backgroundPath, elements });
+      } else {
+        await CertTemplate.create({ name, orientation, bgColor, backgroundPath, elements, createdBy: req.user._id });
+      }
+      res.redirect('/cert');
+    } catch (e) { next(e); }
+  });
+
+  // Delete template
+  app.post('/cert/:id/delete', requireAuth, isAdmin, async (req, res, next) => {
+    try {
+      await CertTemplate.findByIdAndDelete(req.params.id);
+      res.redirect('/cert');
+    } catch (e) { next(e); }
+  });
+
+  // Serve background image
+  app.get('/cert/:id/bg', requireAuth, async (req, res, next) => {
+    try {
+      const template = await CertTemplate.findById(req.params.id).select('backgroundPath').lean();
+      if (!template || !template.backgroundPath) return res.status(404).send('No background');
+      res.sendFile(path.resolve(template.backgroundPath));
+    } catch (e) { next(e); }
+  });
+
+  // Preview PDF (opens in browser)
+  app.get('/cert/:id/preview', requireAuth, async (req, res, next) => {
+    try {
+      const template = await CertTemplate.findById(req.params.id).lean();
+      if (!template) return res.status(404).send('Template tidak ditemukan.');
+      const bgDataUrl = await toDataUrl(template.backgroundPath);
+      // Use placeholder field values for preview
+      const fields = {};
+      for (const k of Object.keys(FIELD_LABELS)) fields[k] = FIELD_LABELS[k];
+      const buf = await generateOneCertPdf(template, fields, bgDataUrl);
+      res.set('Content-Type', 'application/pdf');
+      res.set('Content-Disposition', 'inline; filename="preview.pdf"');
+      res.send(buf);
+    } catch (e) { next(e); }
+  });
+
+  // Generate single cert — form
+  app.get('/cert/:id/generate', requireAuth, async (req, res, next) => {
+    try {
+      const template = await CertTemplate.findById(req.params.id).lean();
+      if (!template) return res.status(404).send('Template tidak ditemukan.');
+      res.render('cert/generate', { currentUser: req.user, active: 'cert', template, fieldLabel, FIELD_LABELS });
+    } catch (e) { next(e); }
+  });
+
+  // Generate single cert — download PDF
+  app.post('/cert/:id/generate', requireAuth, async (req, res, next) => {
+    try {
+      const template = await CertTemplate.findById(req.params.id).lean();
+      if (!template) return res.status(404).send('Template tidak ditemukan.');
+      const bgDataUrl = await toDataUrl(template.backgroundPath);
+      const fields = {};
+      for (const k of Object.keys(FIELD_LABELS)) fields[k] = String(req.body[k] || '');
+      const buf = await generateOneCertPdf(template, fields, bgDataUrl);
+      const safeName = String(fields.name || 'sertifikat').replace(/[^a-z0-9_-]/gi, '_');
+      res.set('Content-Type', 'application/pdf');
+      res.set('Content-Disposition', `attachment; filename="${safeName}.pdf"`);
+      res.send(buf);
+    } catch (e) { next(e); }
+  });
+
+  // Bulk Excel — form
+  app.get('/cert/:id/bulk', requireAuth, isAdmin, async (req, res, next) => {
+    try {
+      const template = await CertTemplate.findById(req.params.id).lean();
+      if (!template) return res.status(404).send('Template tidak ditemukan.');
+      res.render('cert/bulk', { currentUser: req.user, active: 'cert', template, fieldLabel, FIELD_LABELS });
+    } catch (e) { next(e); }
+  });
+
+  // Bulk Excel — generate zip of PDFs
+  app.post('/cert/:id/bulk', requireAuth, isAdmin, xlsxUpload.single('excelFile'), async (req, res, next) => {
+    try {
+      const template = await CertTemplate.findById(req.params.id).lean();
+      if (!template) return res.status(404).send('Template tidak ditemukan.');
+      if (!req.file) return res.status(400).send('File Excel wajib diupload.');
+
+      const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = xlsx.utils.sheet_to_json(sheet, { defval: '' });
+
+      if (!rows.length) return res.status(400).send('File Excel kosong.');
+
+      const fieldKeys = Object.keys(FIELD_LABELS);
+      const records = rows.map((row) => {
+        const fields = {};
+        for (const k of fieldKeys) {
+          // Accept both English key and Indonesian label as column headers
+          fields[k] = String(row[k] || row[fieldLabel(k)] || '');
+        }
+        return fields;
+      });
+
+      const bgDataUrl = await toDataUrl(template.backgroundPath);
+      const buffers = await generateBulkCertPdf(template, records);
+
+      // Build zip in memory using JSZip if available, else stream multi-PDF
+      let JSZip;
+      try { JSZip = require('jszip'); } catch (_) { JSZip = null; }
+
+      if (JSZip) {
+        const zip = new JSZip();
+        buffers.forEach((buf, i) => {
+          const name = String(records[i].name || `sertifikat_${i + 1}`).replace(/[^a-z0-9_-]/gi, '_');
+          zip.file(`${name}.pdf`, buf);
+        });
+        const zipBuf = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+        res.set('Content-Type', 'application/zip');
+        res.set('Content-Disposition', `attachment; filename="sertifikat_bulk.zip"`);
+        return res.send(zipBuf);
+      }
+
+      // Fallback: download first PDF only
+      res.set('Content-Type', 'application/pdf');
+      res.set('Content-Disposition', 'attachment; filename="sertifikat_bulk.pdf"');
+      res.send(buffers[0]);
+    } catch (e) { next(e); }
+  });
+}
 
 if (String(process.env.DEBUG_ROUTES || '') === '1') {
   app.get('/__debug/routes', (req, res) => {

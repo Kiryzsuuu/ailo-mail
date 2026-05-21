@@ -30,7 +30,8 @@
     "pdf-lib": "^1.17.1",
     "puppeteer": "^24.40.0",
     "qrcode": "^1.5.4",
-    "sanitize-html": "^2.17.2"
+    "sanitize-html": "^2.17.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",

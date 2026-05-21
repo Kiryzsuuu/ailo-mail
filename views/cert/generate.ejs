@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Generate Sertifikat — AILO</title>
+  <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
+  <link rel="stylesheet" href="/print.css" />
+  <style>
+    .gen-layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    .preview-frame {
+      width: 100%;
+      aspect-ratio: <%= template.orientation === 'portrait' ? '210/297' : '297/210' %>;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .preview-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .field-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+    .field-row label { font-weight: 600; font-size: 13px; }
+    .field-row input {
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      width: 100%;
+    }
+    .field-row input:focus { outline: 2px solid var(--primary); outline-offset: 0; border-color: transparent; }
+    @media (max-width: 780px) {
+      .gen-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <%- include('../partials/nav', { currentUser, active: 'cert' }) %>
+
+  <main class="page">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap">
+      <a class="btn ghost" href="/cert" style="padding:0 12px">&larr;</a>
+      <div>
+        <h1 class="app-title" style="margin:0">Generate Sertifikat</h1>
+        <p class="muted" style="margin:4px 0 0">Template: <strong><%= template.name %></strong></p>
+      </div>
+    </div>
+
+    <div class="gen-layout">
+      <!-- Form -->
+      <div class="paper" style="padding:24px">
+        <h2 style="margin:0 0 16px; font-size:16px">Isi Data Penerima</h2>
+
+        <form method="POST" action="/cert/<%= template._id %>/generate" target="_blank" id="genForm">
+          <%
+            // Only show fields actually used in template elements
+            const usedFields = new Set((template.elements || []).filter(e => e.type === 'field').map(e => e.field));
+            const allFields = Object.keys(FIELD_LABELS);
+            const fields = allFields.filter(f => usedFields.has(f));
+            const unusedFields = allFields.filter(f => !usedFields.has(f));
+          %>
+
+          <% if (fields.length) { %>
+            <p class="muted small" style="margin:0 0 12px">Kolom yang digunakan template ini:</p>
+            <% fields.forEach(function(f) { %>
+              <div class="field-row">
+                <label for="field_<%= f %>"><%= fieldLabel(f) %></label>
+                <input type="text" id="field_<%= f %>" name="<%= f %>" placeholder="<%= fieldLabel(f) %>" />
+              </div>
+            <% }); %>
+          <% } %>
+
+          <% if (unusedFields.length && fields.length) { %>
+            <details style="margin-bottom:14px">
+              <summary class="muted small" style="cursor:pointer; user-select:none">Kolom tambahan (tidak dipakai template)</summary>
+              <div style="margin-top:10px">
+                <% unusedFields.forEach(function(f) { %>
+                  <div class="field-row">
+                    <label for="field_<%= f %>" style="color:var(--muted)"><%= fieldLabel(f) %></label>
+                    <input type="text" id="field_<%= f %>" name="<%= f %>" placeholder="<%= fieldLabel(f) %>" />
+                  </div>
+                <% }); %>
+              </div>
+            </details>
+          <% } %>
+
+          <% if (!fields.length) { %>
+            <% allFields.forEach(function(f) { %>
+              <div class="field-row">
+                <label for="field_<%= f %>"><%= fieldLabel(f) %></label>
+                <input type="text" id="field_<%= f %>" name="<%= f %>" placeholder="<%= fieldLabel(f) %>" />
+              </div>
+            <% }); %>
+          <% } %>
+
+          <div style="display:flex; gap:8px; margin-top:20px">
+            <button type="submit" class="btn" style="flex:1">Download PDF</button>
+            <a class="btn ghost" href="/cert/<%= template._id %>/preview" target="_blank" style="padding:0 14px; display:flex; align-items:center">Preview</a>
+          </div>
+        </form>
+      </div>
+
+      <!-- Live preview -->
+      <div>
+        <p class="muted small" style="margin:0 0 8px">Preview template (dengan data contoh):</p>
+        <div class="preview-frame">
+          <iframe src="/cert/<%= template._id %>/preview" title="Preview Sertifikat"></iframe>
+        </div>
+        <p class="muted small" style="margin:8px 0 0; text-align:center">
+          <%= template.orientation === 'portrait' ? 'Portrait (A4)' : 'Landscape (A4)' %> ·
+          <%= (template.elements || []).length %> elemen
+        </p>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

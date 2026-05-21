@@ -1,0 +1,50 @@
+<header class="nav nav--white" style="position:sticky; top:0; z-index:100">
+  <a class="brand" href="/">
+    <img class="brand-logo" src="/assets/logo-ailo.png" alt="AILO" />
+    <div class="brand-text">
+      <div class="brand-title">Web Mailer</div>
+    </div>
+  </a>
+
+  <nav class="nav-links" aria-label="Navigasi">
+    <a href="/mailer" style="<%= (typeof active !== 'undefined' && active === 'mailer') ? 'color:var(--primary)' : '' %>">Mailer</a>
+    <a href="/dashboard" style="<%= (typeof active !== 'undefined' && active === 'dashboard') ? 'color:var(--primary)' : '' %>">Dashboard</a>
+    <a href="/cert" style="<%= (typeof active !== 'undefined' && active === 'cert') ? 'color:var(--primary)' : '' %>">Sertifikat</a>
+    <% if (['ADMIN','SUPREME','SUPERADMIN'].includes(String(currentUser.role).toUpperCase())) { %>
+      <a href="/approvals" style="<%= (typeof active !== 'undefined' && active === 'approvals') ? 'color:var(--primary)' : '' %>">Approvals</a>
+    <% } %>
+  </nav>
+
+  <div class="nav-actions">
+    <div class="profile-dropdown">
+      <button class="btn ghost" id="profileToggle" type="button" style="gap:8px">
+        <span class="profile-avatar" aria-hidden="true">
+          <img src="/assets/avatar-placeholder.svg" alt="" />
+        </span>
+        <span><%= (currentUser.name && String(currentUser.name).trim()) ? currentUser.name : String(currentUser.email).split('@')[0] %></span>
+      </button>
+      <div class="dropdown-menu" id="dropdownMenu">
+        <a href="/profile" class="dropdown-item">Edit Profile</a>
+        <div class="dropdown-divider"></div>
+        <form action="/logout" method="post" style="margin:0">
+          <button type="submit" class="dropdown-item dropdown-logout" style="width:100%;text-align:left;border:none;background:none;cursor:pointer;font-family:inherit;font-size:14px;padding:12px 16px">Logout</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</header>
+<script>
+(function(){
+  var toggle = document.getElementById('profileToggle');
+  var menu   = document.getElementById('dropdownMenu');
+  if (!toggle || !menu) return;
+  toggle.addEventListener('click', function(e){
+    e.stopPropagation();
+    var rect = toggle.getBoundingClientRect();
+    menu.style.top  = (rect.bottom + 6) + 'px';
+    menu.style.left = (rect.right - 220) + 'px';
+    menu.classList.toggle('active');
+  });
+  document.addEventListener('click', function(){ menu.classList.remove('active'); });
+})();
+</script>

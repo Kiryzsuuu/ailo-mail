@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= template._id ? 'Edit' : 'Buat' %> Template Sertifikat — AILO</title>
+  <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
+  <link rel="stylesheet" href="/print.css" />
+  <style>
+    body { overflow: hidden; }
+    .designer-layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      height: calc(100vh - 62px);
+      overflow: hidden;
+    }
+    .sidebar {
+      border-right: 1px solid var(--line);
+      overflow-y: auto;
+      padding: 16px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .canvas-area {
+      overflow: auto;
+      background: #e8edf2;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 24px;
+    }
+    .cert-preview {
+      position: relative;
+      background: #fff;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+      flex-shrink: 0;
+      overflow: hidden;
+      user-select: none;
+    }
+    .cert-preview img.cert-bg-img {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+    }
+    .cert-el {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      cursor: grab;
+      border: 1.5px dashed transparent;
+      border-radius: 2px;
+      padding: 2px 4px;
+      transition: border-color 0.15s;
+      white-space: pre-wrap;
+      word-break: break-word;
+      text-align: center;
+    }
+    .cert-el:hover { border-color: rgba(11,122,141,0.5); }
+    .cert-el.selected { border-color: var(--primary); background: rgba(11,122,141,0.06); }
+    .cert-el:active { cursor: grabbing; }
+
+    .el-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      font-size: 13px;
+    }
+    .el-card:hover { border-color: var(--primary); }
+    .el-card.selected { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(11,122,141,0.15); }
+    .el-card-row { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .el-card-title { font-weight:700; }
+
+    .prop-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+    .prop-grid label { font-size:12px; font-weight:700; display:grid; gap:4px; }
+    .prop-grid input, .prop-grid select { font-size:13px; padding:6px 8px; border-radius:8px; }
+    .prop-full { grid-column: span 2; }
+
+    .sidebar-section { border-top: 1px solid var(--line); padding-top:12px; }
+    .sidebar-section:first-child { border-top:none; padding-top:0; }
+    .sidebar-title { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.8px; color:var(--muted); margin:0 0 10px; }
+
+    .color-row { display:flex; align-items:center; gap:8px; }
+    .color-row input[type=color] { width:40px; height:36px; border:1px solid var(--line); border-radius:8px; cursor:pointer; padding:2px; }
+    .color-row input[type=text] { flex:1; font-size:13px; padding:6px 8px; border-radius:8px; }
+    .toggle-row { display:flex; gap:6px; }
+    .toggle-btn { flex:1; border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px; font-size:12px; font-weight:700; cursor:pointer; }
+    .toggle-btn.on { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+    @media (max-width:900px) {
+      .designer-layout { grid-template-columns:1fr; }
+      .canvas-area { display:none; }
+    }
+  </style>
+</head>
+<body>
+<% /* Shared nav */ %>
+<div style="position:sticky;top:0;z-index:200;background:#fff;border-bottom:1px solid var(--line)">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;gap:12px">
+    <div style="display:flex;align-items:center;gap:14px">
+      <a href="/cert" style="color:var(--muted);text-decoration:none;font-size:14px">← Sertifikat</a>
+      <span style="color:var(--line)">|</span>
+      <strong style="font-size:15px"><%= template._id ? 'Edit Template' : 'Template Baru' %></strong>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn ghost" type="button" id="btnPreviewPdf" style="height:40px;padding:0 16px">Preview PDF</button>
+      <button class="btn" type="button" id="btnSave" style="height:40px;padding:0 20px">Simpan Template</button>
+    </div>
+  </div>
+</div>
+
+<div class="designer-layout">
+  <!-- ═══ SIDEBAR ═══ -->
+  <div class="sidebar">
+
+    <!-- Template info -->
+    <div class="sidebar-section">
+      <div class="sidebar-title">Info Template</div>
+      <div style="display:grid;gap:8px">
+        <label style="font-size:13px;font-weight:700;display:grid;gap:4px">
+          Nama Template
+          <input id="tplName" type="text" value="<%= template.name || '' %>" placeholder="Contoh: Sertifikat Pelatihan" />
+        </label>
+        <label style="font-size:13px;font-weight:700;display:grid;gap:4px">
+          Orientasi
+          <select id="tplOrientation">
+            <option value="landscape" <%= (template.orientation||'landscape')==='landscape'?'selected':'' %>>Landscape (A4 — 297×210mm)</option>
+            <option value="portrait"  <%= template.orientation==='portrait'?'selected':'' %>>Portrait (A4 — 210×297mm)</option>
+          </select>
+        </label>
+        <label style="font-size:13px;font-weight:700;display:grid;gap:4px">
+          Warna Latar (fallback)
+          <div class="color-row">
+            <input type="color" id="tplBgColor" value="<%= template.bgColor||'#ffffff' %>" />
+            <input type="text"  id="tplBgColorHex" value="<%= template.bgColor||'#ffffff' %>" placeholder="#ffffff" />
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Background image -->
+    <div class="sidebar-section">
+      <div class="sidebar-title">Gambar Latar</div>
+      <% if (template.backgroundPath) { %>
+        <div style="margin-bottom:8px;font-size:12px;color:var(--muted)">Gambar sudah di-upload.</div>
+      <% } %>
+      <label style="font-size:13px;font-weight:700;display:grid;gap:4px">
+        Upload Gambar Baru (PNG/JPG)
+        <input type="file" id="bgFileInput" accept="image/png,image/jpeg,image/webp" style="border-radius:10px;padding:8px" />
+      </label>
+      <div id="bgPreviewThumb" style="margin-top:8px;display:<%= template.hasBg ? 'block' : 'none' %>">
+        <img id="bgThumbImg" src="" style="max-width:100%;border-radius:8px;border:1px solid var(--line)" />
+      </div>
+    </div>
+
+    <!-- Elements list -->
+    <div class="sidebar-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="sidebar-title" style="margin:0">Elemen Teks</div>
+        <button class="btn ghost" type="button" id="btnAddEl" style="height:32px;padding:0 12px;font-size:12px">+ Tambah</button>
+      </div>
+      <div id="elList" style="display:grid;gap:6px"></div>
+    </div>
+
+    <!-- Selected element properties -->
+    <div class="sidebar-section" id="propPanel" style="display:none">
+      <div class="sidebar-title">Properti Elemen</div>
+      <div style="display:grid;gap:8px">
+        <label style="font-size:12px;font-weight:700;display:grid;gap:4px">
+          Tipe
+          <select id="propType">
+            <option value="field">Field (dari data)</option>
+            <option value="text">Teks Tetap</option>
+          </select>
+        </label>
+        <div id="propFieldWrap">
+          <label style="font-size:12px;font-weight:700;display:grid;gap:4px">
+            Field
+            <select id="propField">
+              <option value="name">Nama Penerima</option>
+              <option value="date">Tanggal</option>
+              <option value="certNo">Nomor Sertifikat</option>
+              <option value="event">Nama Kegiatan</option>
+              <option value="position">Jabatan / Peran</option>
+              <option value="organization">Instansi</option>
+            </select>
+          </label>
+        </div>
+        <div id="propTextWrap" style="display:none">
+          <label style="font-size:12px;font-weight:700;display:grid;gap:4px">
+            Teks
+            <input type="text" id="propText" placeholder="Teks tetap..." />
+          </label>
+        </div>
+        <div class="prop-grid">
+          <label>
+            Ukuran Font (pt)
+            <input type="number" id="propFontSize" min="6" max="200" value="32" />
+          </label>
+          <label>
+            Font
+            <select id="propFont">
+              <option value="Calibri, Arial, sans-serif">Calibri</option>
+              <option value="Arial, sans-serif">Arial</option>
+              <option value="'Times New Roman', serif">Times New Roman</option>
+              <option value="Georgia, serif">Georgia</option>
+              <option value="Verdana, sans-serif">Verdana</option>
+              <option value="Tahoma, sans-serif">Tahoma</option>
+              <option value="'Courier New', monospace">Courier New</option>
+            </select>
+          </label>
+          <label class="prop-full">
+            Warna Teks
+            <div class="color-row">
+              <input type="color" id="propColorPicker" value="#1a1a1a" />
+              <input type="text" id="propColor" value="#1a1a1a" placeholder="#1a1a1a" />
+            </div>
+          </label>
+          <label>
+            Posisi X (%)
+            <input type="number" id="propX" min="0" max="100" step="0.1" value="50" />
+          </label>
+          <label>
+            Posisi Y (%)
+            <input type="number" id="propY" min="0" max="100" step="0.1" value="50" />
+          </label>
+          <label>
+            Lebar Maks (%)
+            <input type="number" id="propMaxW" min="10" max="100" step="1" value="80" />
+          </label>
+          <label>
+            Rata Teks
+            <select id="propAlign">
+              <option value="center">Tengah</option>
+              <option value="left">Kiri</option>
+              <option value="right">Kanan</option>
+            </select>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <button class="toggle-btn" type="button" id="propBold">B</button>
+          <button class="toggle-btn" type="button" id="propItalic" style="font-style:italic">I</button>
+        </div>
+        <button class="btn ghost" type="button" id="btnDelEl" style="color:#c00;border-color:rgba(200,0,0,0.3);margin-top:4px">Hapus Elemen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ CANVAS AREA ═══ -->
+  <div class="canvas-area">
+    <div class="cert-preview" id="certPreview">
+      <img class="cert-bg-img" id="certBgImg" src="" alt="" style="display:none" />
+    </div>
+  </div>
+</div>
+
+<!-- Hidden form for save -->
+<form id="saveForm" action="<%= template._id ? '/cert/' + template._id : '/cert' %>" method="post" enctype="multipart/form-data" style="display:none">
+  <input type="hidden" name="name" id="hidName" />
+  <input type="hidden" name="orientation" id="hidOrientation" />
+  <input type="hidden" name="bgColor" id="hidBgColor" />
+  <input type="hidden" name="elements" id="hidElements" />
+  <input type="file" name="background" id="hidBgFile" style="display:none" />
+</form>
+
+<script>
+(function(){
+  /* ─── Initial data ─── */
+  var INIT_ELEMENTS = <%- JSON.stringify(template.elements || []) %>;
+  var INIT_BG_URL   = <%- JSON.stringify(template.bgDataUrl || '') %>;
+  var INIT_BG_COLOR = <%- JSON.stringify(template.bgColor || '#ffffff') %>;
+  var INIT_ORIENT   = <%- JSON.stringify(template.orientation || 'landscape') %>;
+
+  var elements = INIT_ELEMENTS.map(function(e){ return Object.assign({}, e); });
+  var selectedId = null;
+  var bgDataUrl  = INIT_BG_URL;
+  var bgFileObj  = null; // File object when user picks new bg
+  var elCounter  = elements.length;
+
+  /* ─── Canvas size ─── */
+  var SCALE = 2.0; // px per mm preview scale
+  var DIM = { landscape: [297,210], portrait: [210,297] };
+
+  function orient(){ return document.getElementById('tplOrientation').value; }
+  function canvasW(){ return DIM[orient()][0] * SCALE; }
+  function canvasH(){ return DIM[orient()][1] * SCALE; }
+
+  var preview = document.getElementById('certPreview');
+  var bgImg   = document.getElementById('certBgImg');
+
+  function setCanvasSize(){
+    preview.style.width  = canvasW() + 'px';
+    preview.style.height = canvasH() + 'px';
+  }
+
+  /* ─── Render preview ─── */
+  function renderPreview(){
+    setCanvasSize();
+
+    /* background */
+    var bgColor = document.getElementById('tplBgColor').value || '#ffffff';
+    preview.style.background = bgColor;
+
+    if (bgDataUrl) {
+      bgImg.src = bgDataUrl;
+      bgImg.style.display = 'block';
+    } else {
+      bgImg.style.display = 'none';
+    }
+
+    /* remove old el divs */
+    var old = preview.querySelectorAll('.cert-el');
+    old.forEach(function(e){ e.remove(); });
+
+    /* render elements */
+    elements.forEach(function(el){
+      var div = document.createElement('div');
+      div.className = 'cert-el' + (el.id === selectedId ? ' selected' : '');
+      div.dataset.id = el.id;
+
+      var label = el.type === 'text' ? (el.text || '(teks)') : fieldLabel(el.field);
+      div.textContent = label;
+
+      div.style.left        = el.x + '%';
+      div.style.top         = el.y + '%';
+      div.style.fontSize    = (el.fontSize || 32) * SCALE / 96 * 72 / 25.4 * 3.7795 / 10 + 'px';
+      div.style.fontFamily  = el.fontFamily || 'Calibri, Arial, sans-serif';
+      div.style.color       = el.color || '#1a1a1a';
+      div.style.textAlign   = el.align || 'center';
+      div.style.fontWeight  = el.bold ? 'bold' : 'normal';
+      div.style.fontStyle   = el.italic ? 'italic' : 'normal';
+      div.style.maxWidth    = (el.maxWidth || 80) + '%';
+      div.style.fontSize    = (el.fontSize || 32) * SCALE * 0.35 + 'px';
+
+      attachDrag(div, el);
+      attachClick(div, el);
+      preview.appendChild(div);
+    });
+  }
+
+  function fieldLabel(f){
+    var map = {name:'Nama Penerima',date:'Tanggal',certNo:'Nomor Sertifikat',event:'Nama Kegiatan',position:'Jabatan / Peran',organization:'Instansi'};
+    return map[f] || f;
+  }
+
+  /* ─── Drag elements on canvas ─── */
+  function attachDrag(div, el){
+    var dragging = false;
+    div.addEventListener('pointerdown', function(ev){
+      dragging = true;
+      selectEl(el.id);
+      try { div.setPointerCapture(ev.pointerId); } catch(e){}
+      ev.stopPropagation();
+    });
+    div.addEventListener('pointermove', function(ev){
+      if (!dragging) return;
+      var rect = preview.getBoundingClientRect();
+      var x = ((ev.clientX - rect.left) / rect.width * 100);
+      var y = ((ev.clientY - rect.top)  / rect.height * 100);
+      x = Math.max(0, Math.min(100, x));
+      y = Math.max(0, Math.min(100, y));
+      el.x = Math.round(x * 10) / 10;
+      el.y = Math.round(y * 10) / 10;
+      div.style.left = el.x + '%';
+      div.style.top  = el.y + '%';
+      /* update prop inputs if this is selected */
+      if (el.id === selectedId) {
+        document.getElementById('propX').value = el.x;
+        document.getElementById('propY').value = el.y;
+      }
+      ev.preventDefault();
+    });
+    div.addEventListener('pointerup', function(){ dragging = false; });
+  }
+
+  function attachClick(div, el){
+    div.addEventListener('click', function(ev){
+      selectEl(el.id);
+      ev.stopPropagation();
+    });
+  }
+
+  /* ─── Sidebar element list ─── */
+  function renderElList(){
+    var list = document.getElementById('elList');
+    list.innerHTML = '';
+    if (!elements.length){
+      list.innerHTML = '<div class="muted small" style="text-align:center;padding:8px">Belum ada elemen. Klik + Tambah.</div>';
+      return;
+    }
+    elements.forEach(function(el){
+      var card = document.createElement('div');
+      card.className = 'el-card' + (el.id === selectedId ? ' selected' : '');
+      card.innerHTML = '<div class="el-card-row">'
+        + '<span class="el-card-title">' + esc(el.type==='text'?(el.text||'(teks)'):(fieldLabel(el.field))) + '</span>'
+        + '<span class="muted small">' + (el.type==='field'?'Field':'Teks') + '</span>'
+        + '</div>';
+      card.addEventListener('click', function(){ selectEl(el.id); });
+      list.appendChild(card);
+    });
+  }
+
+  /* ─── Select / deselect element ─── */
+  function selectEl(id){
+    selectedId = id;
+    var el = elements.find(function(e){ return e.id === id; });
+    var panel = document.getElementById('propPanel');
+    if (!el){ panel.style.display='none'; renderElList(); renderPreview(); return; }
+    panel.style.display = 'block';
+
+    document.getElementById('propType').value     = el.type || 'field';
+    document.getElementById('propField').value    = el.field || 'name';
+    document.getElementById('propText').value     = el.text || '';
+    document.getElementById('propFontSize').value = el.fontSize || 32;
+    document.getElementById('propFont').value     = el.fontFamily || 'Calibri, Arial, sans-serif';
+    document.getElementById('propColor').value    = el.color || '#1a1a1a';
+    document.getElementById('propColorPicker').value = el.color || '#1a1a1a';
+    document.getElementById('propX').value        = el.x ?? 50;
+    document.getElementById('propY').value        = el.y ?? 50;
+    document.getElementById('propMaxW').value     = el.maxWidth || 80;
+    document.getElementById('propAlign').value    = el.align || 'center';
+    document.getElementById('propBold').classList.toggle('on', !!el.bold);
+    document.getElementById('propItalic').classList.toggle('on', !!el.italic);
+    syncFieldTextToggle(el.type);
+    renderElList();
+    renderPreview();
+  }
+
+  function syncFieldTextToggle(type){
+    document.getElementById('propFieldWrap').style.display = type==='text' ? 'none' : 'block';
+    document.getElementById('propTextWrap').style.display  = type==='text' ? 'block' : 'none';
+  }
+
+  /* ─── Prop changes → update element ─── */
+  function withSelected(fn){
+    var el = elements.find(function(e){ return e.id === selectedId; });
+    if (el){ fn(el); renderElList(); renderPreview(); }
+  }
+
+  document.getElementById('propType').addEventListener('change', function(){
+    withSelected(function(el){ el.type = this.value; }.bind(this));
+    syncFieldTextToggle(this.value);
+  });
+  document.getElementById('propField').addEventListener('change',    function(){ withSelected(function(el){ el.field = this.value; }.bind(this)); });
+  document.getElementById('propText').addEventListener('input',      function(){ withSelected(function(el){ el.text = this.value; }.bind(this)); });
+  document.getElementById('propFontSize').addEventListener('input',  function(){ withSelected(function(el){ el.fontSize = Number(this.value)||32; }.bind(this)); });
+  document.getElementById('propFont').addEventListener('change',     function(){ withSelected(function(el){ el.fontFamily = this.value; }.bind(this)); });
+  document.getElementById('propAlign').addEventListener('change',    function(){ withSelected(function(el){ el.align = this.value; }.bind(this)); });
+  document.getElementById('propMaxW').addEventListener('input',      function(){ withSelected(function(el){ el.maxWidth = Number(this.value)||80; }.bind(this)); });
+  document.getElementById('propX').addEventListener('input',         function(){ withSelected(function(el){ el.x = Number(this.value)||0; }.bind(this)); });
+  document.getElementById('propY').addEventListener('input',         function(){ withSelected(function(el){ el.y = Number(this.value)||0; }.bind(this)); });
+
+  document.getElementById('propColor').addEventListener('input', function(){
+    document.getElementById('propColorPicker').value = this.value;
+    withSelected(function(el){ el.color = document.getElementById('propColor').value; });
+  });
+  document.getElementById('propColorPicker').addEventListener('input', function(){
+    document.getElementById('propColor').value = this.value;
+    withSelected(function(el){ el.color = this.value; }.bind(this));
+  });
+
+  document.getElementById('propBold').addEventListener('click', function(){
+    this.classList.toggle('on');
+    withSelected(function(el){ el.bold = document.getElementById('propBold').classList.contains('on'); });
+  });
+  document.getElementById('propItalic').addEventListener('click', function(){
+    this.classList.toggle('on');
+    withSelected(function(el){ el.italic = document.getElementById('propItalic').classList.contains('on'); });
+  });
+
+  /* ─── Add / delete element ─── */
+  document.getElementById('btnAddEl').addEventListener('click', function(){
+    elCounter++;
+    var el = { id: 'el_' + elCounter, type: 'field', field: 'name', text: '', x: 50, y: 50, fontSize: 32,
+      fontFamily: 'Calibri, Arial, sans-serif', color: '#1a1a1a', align: 'center', bold: false, italic: false, maxWidth: 80 };
+    elements.push(el);
+    selectEl(el.id);
+  });
+
+  document.getElementById('btnDelEl').addEventListener('click', function(){
+    elements = elements.filter(function(e){ return e.id !== selectedId; });
+    selectedId = null;
+    document.getElementById('propPanel').style.display = 'none';
+    renderElList(); renderPreview();
+  });
+
+  /* ─── Background color sync ─── */
+  document.getElementById('tplBgColor').addEventListener('input', function(){
+    document.getElementById('tplBgColorHex').value = this.value;
+    renderPreview();
+  });
+  document.getElementById('tplBgColorHex').addEventListener('input', function(){
+    document.getElementById('tplBgColor').value = this.value;
+    renderPreview();
+  });
+
+  /* ─── Background image upload ─── */
+  document.getElementById('bgFileInput').addEventListener('change', function(){
+    var file = this.files && this.files[0];
+    if (!file) return;
+    bgFileObj = file;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      bgDataUrl = ev.target.result;
+      document.getElementById('bgThumbImg').src = bgDataUrl;
+      document.getElementById('bgPreviewThumb').style.display = 'block';
+      renderPreview();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  /* ─── Orientation change ─── */
+  document.getElementById('tplOrientation').addEventListener('change', function(){ renderPreview(); });
+
+  /* ─── Click outside deselects ─── */
+  preview.addEventListener('click', function(){ selectedId = null; document.getElementById('propPanel').style.display='none'; renderElList(); renderPreview(); });
+
+  /* ─── Save ─── */
+  document.getElementById('btnSave').addEventListener('click', function(){
+    var name = document.getElementById('tplName').value.trim();
+    if (!name){ alert('Nama template wajib diisi.'); return; }
+
+    document.getElementById('hidName').value        = name;
+    document.getElementById('hidOrientation').value = orient();
+    document.getElementById('hidBgColor').value     = document.getElementById('tplBgColor').value;
+    document.getElementById('hidElements').value    = JSON.stringify(elements);
+
+    /* transfer bg file to hidden file input */
+    if (bgFileObj) {
+      var dt = new DataTransfer();
+      dt.items.add(bgFileObj);
+      document.getElementById('hidBgFile').files = dt.files;
+    }
+
+    document.getElementById('saveForm').submit();
+  });
+
+  /* ─── Preview PDF (opens in new tab) ─── */
+  document.getElementById('btnPreviewPdf').addEventListener('click', function(){
+    var id = <%- JSON.stringify(String(template._id||'')) %>;
+    if (!id){ alert('Simpan template dulu sebelum preview PDF.'); return; }
+    window.open('/cert/' + id + '/preview', '_blank');
+  });
+
+  /* ─── Utility ─── */
+  function esc(s){ return String(s||'').replace(/[&<>\"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);}); }
+
+  /* ─── Init ─── */
+  setCanvasSize();
+  renderElList();
+  renderPreview();
+})();
+</script>
+</body>
+</html>

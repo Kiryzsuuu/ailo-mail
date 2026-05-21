@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sertifikat — AILO</title>
+  <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
+  <link rel="stylesheet" href="/print.css" />
+</head>
+<body>
+<div class="shell">
+  <%- include('../partials/nav', { currentUser, active: 'cert' }) %>
+
+  <main class="page">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:24px">
+      <div>
+        <h1 class="app-title" style="margin:0">Sertifikat</h1>
+        <p class="muted" style="margin:4px 0 0">Buat & kelola template sertifikat, generate PDF satuan atau massal dari Excel.</p>
+      </div>
+      <% if (['ADMIN','SUPREME','SUPERADMIN'].includes(String(currentUser.role).toUpperCase())) { %>
+        <a class="btn" href="/cert/new">+ Buat Template</a>
+      <% } %>
+    </div>
+
+    <% if (!templates || !templates.length) { %>
+      <div class="paper" style="text-align:center; padding:48px 24px">
+        <p class="muted">Belum ada template sertifikat.</p>
+        <% if (['ADMIN','SUPREME','SUPERADMIN'].includes(String(currentUser.role).toUpperCase())) { %>
+          <a class="btn" href="/cert/new" style="margin-top:12px">Buat Template Pertama</a>
+        <% } %>
+      </div>
+    <% } else { %>
+      <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px">
+        <% templates.forEach(function(t) { %>
+          <div class="paper" style="display:flex; flex-direction:column; gap:12px; padding:18px">
+            <div>
+              <div style="font-weight:800; font-size:16px; margin-bottom:4px"><%= t.name %></div>
+              <div class="muted small"><%= t.orientation === 'portrait' ? 'Portrait (A4)' : 'Landscape (A4)' %> · <%= t.elements ? t.elements.length : 0 %> elemen</div>
+              <div class="muted small">Dibuat: <%= new Date(t.createdAt).toLocaleDateString('id-ID') %></div>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:auto">
+              <a class="btn ghost" href="/cert/<%= t._id %>/generate" style="flex:1; text-align:center">Generate</a>
+              <% if (['ADMIN','SUPREME','SUPERADMIN'].includes(String(currentUser.role).toUpperCase())) { %>
+                <a class="btn ghost" href="/cert/<%= t._id %>/bulk" style="flex:1; text-align:center">Bulk Excel</a>
+                <a class="btn ghost" href="/cert/<%= t._id %>/edit" style="padding:0 12px">Edit</a>
+              <% } %>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </main>
+</div>
+</body>
+</html>

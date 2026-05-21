@@ -121,7 +121,7 @@ function sanitizeRich(html) {
       'blockquote',
     ],
     allowedAttributes: {
-      '*': ['style'],
+      '*': ['style', 'class'],
       img: ['src', 'alt', 'style'],
       a: ['href', 'target', 'rel'],
     },

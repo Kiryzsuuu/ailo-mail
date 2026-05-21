@@ -3,9 +3,81 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>AILO WEB MAILER</title>
+    <title>Generator Surat — AILO</title>
     <link rel="icon" type="image/png" href="/assets/ailo-favicon.png" />
     <link rel="stylesheet" href="/print.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" />
+    <style>
+      .ql-toolbar.ql-snow {
+        border: none;
+        border-bottom: 1px solid var(--line);
+        border-radius: 12px 12px 0 0;
+        background: rgba(11,19,32,0.025);
+        padding: 8px 10px;
+        flex-wrap: wrap;
+      }
+      .ql-container.ql-snow {
+        border: none;
+        font-family: var(--uiFont, Calibri, "Segoe UI", Arial, sans-serif);
+        font-size: 15px;
+        line-height: 1.6;
+      }
+      .ql-editor { padding: 14px 16px; }
+      .ql-editor.ql-blank::before {
+        color: rgba(11,19,32,0.38);
+        font-style: normal;
+      }
+      .quill-wrap {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fff;
+        transition: border-color 0.18s;
+      }
+      .quill-wrap:focus-within { border-color: var(--primary); }
+      .quill-wrap--sm .ql-editor { min-height: 100px; }
+      .quill-wrap--lg .ql-editor { min-height: 300px; }
+
+      .fsec { margin-bottom: 28px; }
+      .fsec-title {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--muted);
+        margin: 0 0 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .fsec-title::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--line);
+      }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+      }
+      @media (max-width: 720px) {
+        .grid-3 { grid-template-columns: 1fr 1fr; }
+      }
+      @media (max-width: 480px) {
+        .grid-3 { grid-template-columns: 1fr; }
+      }
+      .submit-bar {
+        display: flex;
+        justify-content: flex-end;
+        padding-top: 8px;
+      }
+      .submit-bar .btn {
+        padding: 14px 36px;
+        font-size: 16px;
+        border-radius: 14px;
+      }
+    </style>
   </head>
   <body>
     <div class="shell">
@@ -16,7 +88,6 @@
             <div class="brand-title">Web Mailer</div>
           </div>
         </a>
-
         <nav class="nav-links" aria-label="Navigasi">
           <a href="/mailer">Mailer</a>
           <a href="https://ailo.telkomuniversity.ac.id/#research" target="_blank" rel="noreferrer">Research</a>
@@ -24,7 +95,6 @@
           <a href="https://ailo.telkomuniversity.ac.id/#team" target="_blank" rel="noreferrer">Team</a>
           <a href="https://ailo.telkomuniversity.ac.id/#about" target="_blank" rel="noreferrer">About</a>
         </nav>
-
         <div class="nav-actions">
           <a class="btn ghost" href="/dashboard">Dashboard</a>
           <form class="inline" action="/logout" method="post">
@@ -34,504 +104,350 @@
       </header>
 
       <main class="page">
-        <h1 class="app-title">GENERATOR SURAT</h1>
-        <p class="muted">Isi form di bawah, lalu lihat preview dan download PDF.</p>
+        <h1 class="app-title">Generator Surat</h1>
+        <p class="muted" style="margin:0 0 28px">Isi form di bawah, lalu klik <strong>Preview Surat</strong> untuk melihat dan mengunduh PDF.</p>
 
-        <form action="/letters/preview" method="post">
-          <div class="grid">
-            <label class="span-2">
-              Jenis Surat
-              <select name="template" id="templateSelect">
-                <option value="DEFAULT" <%= (defaults.template || 'DEFAULT') === 'DEFAULT' ? 'selected' : '' %>>Surat (Default)</option>
-                <option value="SURAT_TUGAS" <%= defaults.template === 'SURAT_TUGAS' ? 'selected' : '' %>>Surat Tugas</option>
-                <option value="SURAT_TUGAS_PANDUAN" <%= defaults.template === 'SURAT_TUGAS_PANDUAN' ? 'selected' : '' %>>Surat Tugas Panduan</option>
-                <option value="SURAT_TUGAS_TENAGA_AHLI" <%= defaults.template === 'SURAT_TUGAS_TENAGA_AHLI' ? 'selected' : '' %>>Surat Tugas Tenaga Ahli</option>
-                <option value="SURAT_TUGAS_UNDANGAN" <%= defaults.template === 'SURAT_TUGAS_UNDANGAN' ? 'selected' : '' %>>Surat Tugas Undangan</option>
-                <option value="SURAT_TUGAS_IN_HOUSE_TRAINING" <%= defaults.template === 'SURAT_TUGAS_IN_HOUSE_TRAINING' ? 'selected' : '' %>>Surat Tugas In-House Training</option>
-              </select>
-            </label>
-            <label>
-              Font Surat
-              <select name="font" id="fontSelect">
-                <option value="calibri" <%= (defaults.font || 'calibri') === 'calibri' ? 'selected' : '' %>>Calibri</option>
-                <option value="arial" <%= defaults.font === 'arial' ? 'selected' : '' %>>Arial</option>
-                <option value="times" <%= defaults.font === 'times' ? 'selected' : '' %>>Times New Roman</option>
-                <option value="georgia" <%= defaults.font === 'georgia' ? 'selected' : '' %>>Georgia</option>
-                <option value="tahoma" <%= defaults.font === 'tahoma' ? 'selected' : '' %>>Tahoma</option>
-                <option value="verdana" <%= defaults.font === 'verdana' ? 'selected' : '' %>>Verdana</option>
-                <option value="trebuchet" <%= defaults.font === 'trebuchet' ? 'selected' : '' %>>Trebuchet MS</option>
-                <option value="garamond" <%= defaults.font === 'garamond' ? 'selected' : '' %>>Garamond</option>
-                <option value="courier" <%= defaults.font === 'courier' ? 'selected' : '' %>>Courier New</option>
-                <option value="system" <%= defaults.font === 'system' ? 'selected' : '' %>>System UI</option>
-              </select>
-            </label>
-            <label class="span-2">
-              Font Lainnya (custom, opsional)
-              <input name="fontCustom" id="fontCustom" placeholder='Contoh: Cambria, "Times New Roman", serif' />
-            </label>
+        <form action="/letters/preview" method="post" id="letterForm">
 
-            <label>
-              Ukuran Font (pt)
-              <input type="number" name="fontSizePt" min="8" max="24" step="0.5" value="<%= defaults.fontSizePt || 12 %>" />
-            </label>
-            <label>
-              Line Spacing
-              <input type="number" name="lineHeight" min="1" max="2.2" step="0.05" value="<%= defaults.lineHeight || 1.55 %>" />
-            </label>
-            <label>
-              Paragraph Spacing (pt)
-              <input type="number" name="paragraphSpacingPt" min="0" max="24" step="1" value="<%= defaults.paragraphSpacingPt || 0 %>" />
-            </label>
-            <label>
-              Section Spacing (pt)
-              <input type="number" name="sectionSpacingPt" min="0" max="48" step="1" value="<%= defaults.sectionSpacingPt || 0 %>" />
-            </label>
-          </div>
-
-          <hr class="sep" />
-
-        <div class="grid">
-          <label>
-            Tempat
-            <input name="place" value="<%= defaults.place %>" />
-          </label>
-          <label>
-            Tanggal
-            <input type="date" name="date" value="<%= defaults.date %>" />
-          </label>
-          <label>
-            Nomor Surat
-            <input name="number" placeholder="Contoh: 001/AILO/III/2026" value="<%= defaults.number %>" />
-          </label>
-          <label>
-            Lampiran
-            <input name="attachment" value="<%= defaults.attachment %>" />
-          </label>
-          <label class="span-2">
-            Perihal
-            <input name="subject" placeholder="Contoh: Permohonan Data" value="<%= defaults.subject %>" />
-          </label>
-        </div>
-
-        <hr class="sep" />
-
-        <div class="grid">
-          <label class="span-2">
-            Penerima
-            <input name="recipient" placeholder="Contoh: Yth. Kepala ..." value="<%= defaults.recipient %>" />
-          </label>
-          <div class="span-2 field">
-            <div>Alamat Penerima (opsional)</div>
-            <div class="paper" style="padding:12px; border-radius:12px">
-              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px">
-                <div class="muted small">Bisa bold/italic/underline, list, dan sisip foto.</div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap">
-                  <button class="btn ghost" type="button" data-rt-cmd="bold" style="height:40px; padding:0 14px; min-width:auto">Bold</button>
-                  <button class="btn ghost" type="button" data-rt-cmd="italic" style="height:40px; padding:0 14px; min-width:auto">Italic</button>
-                  <button class="btn ghost" type="button" data-rt-cmd="underline" style="height:40px; padding:0 14px; min-width:auto">Underline</button>
-                  <button class="btn ghost" type="button" data-rt-cmd="insertUnorderedList" style="height:40px; padding:0 14px; min-width:auto">• List</button>
-                  <button class="btn ghost" type="button" data-rt-img="recipient" style="height:40px; padding:0 14px; min-width:auto">+ Foto</button>
-                </div>
-              </div>
-
-              <div contenteditable="true" class="rt-editor" id="recipientEditor" tabindex="0" style="min-height:92px; outline:none; cursor:text"><%- (defaults.recipientAddressHtml || '') %></div>
-
-              <textarea class="hidden-field" name="recipientAddress" id="recipientAddress"><%= defaults.recipientAddress %></textarea>
-              <textarea class="hidden-field" name="recipientAddressHtml" id="recipientAddressHtml"><%= defaults.recipientAddressHtml || '' %></textarea>
+          <!-- 1. Jenis & Tampilan -->
+          <div class="fsec">
+            <p class="fsec-title">1 · Jenis &amp; Tampilan</p>
+            <div class="grid" style="gap:12px">
+              <label class="span-2">
+                Jenis Surat
+                <select name="template" id="templateSelect">
+                  <option value="DEFAULT"                    <%= (defaults.template||'DEFAULT')==='DEFAULT'                    ? 'selected':'' %>>Surat Umum (Default)</option>
+                  <option value="SURAT_TUGAS"                <%= defaults.template==='SURAT_TUGAS'                ? 'selected':'' %>>Surat Tugas</option>
+                  <option value="SURAT_TUGAS_PANDUAN"        <%= defaults.template==='SURAT_TUGAS_PANDUAN'        ? 'selected':'' %>>Surat Tugas Panduan</option>
+                  <option value="SURAT_TUGAS_TENAGA_AHLI"    <%= defaults.template==='SURAT_TUGAS_TENAGA_AHLI'    ? 'selected':'' %>>Surat Tugas Tenaga Ahli</option>
+                  <option value="SURAT_TUGAS_UNDANGAN"       <%= defaults.template==='SURAT_TUGAS_UNDANGAN'       ? 'selected':'' %>>Surat Tugas Undangan</option>
+                  <option value="SURAT_TUGAS_IN_HOUSE_TRAINING" <%= defaults.template==='SURAT_TUGAS_IN_HOUSE_TRAINING' ? 'selected':'' %>>Surat Tugas In-House Training</option>
+                </select>
+              </label>
+              <label>
+                Font
+                <select name="font" id="fontSelect">
+                  <option value="calibri"   <%= (defaults.font||'calibri')==='calibri'   ? 'selected':'' %>>Calibri</option>
+                  <option value="arial"     <%= defaults.font==='arial'     ? 'selected':'' %>>Arial</option>
+                  <option value="times"     <%= defaults.font==='times'     ? 'selected':'' %>>Times New Roman</option>
+                  <option value="georgia"   <%= defaults.font==='georgia'   ? 'selected':'' %>>Georgia</option>
+                  <option value="tahoma"    <%= defaults.font==='tahoma'    ? 'selected':'' %>>Tahoma</option>
+                  <option value="verdana"   <%= defaults.font==='verdana'   ? 'selected':'' %>>Verdana</option>
+                  <option value="trebuchet" <%= defaults.font==='trebuchet' ? 'selected':'' %>>Trebuchet MS</option>
+                  <option value="garamond"  <%= defaults.font==='garamond'  ? 'selected':'' %>>Garamond</option>
+                  <option value="courier"   <%= defaults.font==='courier'   ? 'selected':'' %>>Courier New</option>
+                  <option value="system"    <%= defaults.font==='system'    ? 'selected':'' %>>System UI</option>
+                </select>
+              </label>
+              <label>
+                Font Custom (opsional)
+                <input name="fontCustom" id="fontCustom" placeholder='Contoh: Cambria, serif' value="<%= defaults.fontCustom||'' %>" />
+              </label>
+              <label>
+                Ukuran Font (pt)
+                <input type="number" name="fontSizePt" min="8" max="24" step="0.5" value="<%= defaults.fontSizePt||12 %>" />
+              </label>
+              <label>
+                Line Spacing
+                <input type="number" name="lineHeight" min="1" max="2.2" step="0.05" value="<%= defaults.lineHeight||1.55 %>" />
+              </label>
+              <label>
+                Spasi Paragraf (pt)
+                <input type="number" name="paragraphSpacingPt" min="0" max="24" step="1" value="<%= defaults.paragraphSpacingPt||0 %>" />
+              </label>
+              <label>
+                Spasi Antar Bagian (pt)
+                <input type="number" name="sectionSpacingPt" min="0" max="48" step="1" value="<%= defaults.sectionSpacingPt||0 %>" />
+              </label>
             </div>
           </div>
-        </div>
 
-        <hr class="sep" />
+          <!-- 2. Detail Surat -->
+          <div class="fsec">
+            <p class="fsec-title">2 · Detail Surat</p>
+            <div class="grid" style="gap:12px">
+              <label>
+                Tempat
+                <input name="place" value="<%= defaults.place %>" placeholder="Bandung" />
+              </label>
+              <label>
+                Tanggal
+                <input type="date" name="date" value="<%= defaults.date %>" />
+              </label>
+              <label>
+                Nomor Surat
+                <input name="number" placeholder="001/AILO/III/2026" value="<%= defaults.number %>" />
+              </label>
+              <label>
+                Lampiran
+                <input name="attachment" value="<%= defaults.attachment||'-' %>" />
+              </label>
+              <label class="span-2">
+                Perihal
+                <input name="subject" placeholder="Contoh: Permohonan Data Penelitian" value="<%= defaults.subject %>" />
+              </label>
+            </div>
+          </div>
 
-        <div class="field">
-          <div>Isi Surat</div>
-          <div class="paper" style="padding:12px; border-radius:12px">
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px">
-              <div class="muted small">Gunakan toolbar untuk bold/italic/underline, list, dan sisip foto.</div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap">
-                <button class="btn ghost" type="button" data-rt-cmd="bold" style="height:40px; padding:0 14px; min-width:auto">Bold</button>
-                <button class="btn ghost" type="button" data-rt-cmd="italic" style="height:40px; padding:0 14px; min-width:auto">Italic</button>
-                <button class="btn ghost" type="button" data-rt-cmd="underline" style="height:40px; padding:0 14px; min-width:auto">Underline</button>
-                <button class="btn ghost" type="button" data-rt-cmd="insertUnorderedList" style="height:40px; padding:0 14px; min-width:auto">• List</button>
-                <button class="btn ghost" type="button" data-rt-img="body" style="height:40px; padding:0 14px; min-width:auto">+ Foto</button>
+          <!-- 3. Penerima -->
+          <div class="fsec">
+            <p class="fsec-title">3 · Penerima</p>
+            <div class="grid" style="gap:12px">
+              <label class="span-2">
+                Kepada (Yth.)
+                <input name="recipient" placeholder="Yth. Kepala Bagian ..." value="<%= defaults.recipient %>" />
+              </label>
+              <div class="span-2 field">
+                <span>Alamat Penerima <span class="muted small">(opsional — bisa bold, list, dsb.)</span></span>
+                <div class="quill-wrap quill-wrap--sm">
+                  <div id="recipientEditor"></div>
+                </div>
+                <textarea class="hidden-field" name="recipientAddress"     id="recipientAddress"><%= defaults.recipientAddress %></textarea>
+                <textarea class="hidden-field" name="recipientAddressHtml" id="recipientAddressHtml"><%= defaults.recipientAddressHtml||'' %></textarea>
               </div>
             </div>
-
-            <div contenteditable="true" class="rt-editor" id="bodyEditor" tabindex="0" style="min-height:260px; outline:none; cursor:text"><%- (defaults.bodyHtml || '') %></div>
-
-            <textarea class="hidden-field" name="body" id="body"><%= defaults.body %></textarea>
-            <textarea class="hidden-field" name="bodyHtml" id="bodyHtml"><%= defaults.bodyHtml || '' %></textarea>
           </div>
-        </div>
 
-        <div id="taskExtras" style="display:none">
-          <hr class="sep" />
-          <div class="grid">
-            <label>
-              NIP Penandatangan (opsional)
-              <input name="signatoryNip" value="<%= defaults.signatoryNip || '' %>" />
-            </label>
-            <label class="span-2">
-              Data Tabel
-              <div class="paper" style="padding:12px; border-radius:12px">
-                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px">
-                  <div class="muted small" id="tableHint">Klik + untuk menambah baris.</div>
-                  <button class="btn ghost" type="button" id="addRowBtn" style="height:40px; padding:0 14px; min-width:auto">+ Baris</button>
-                </div>
-
-                <div style="overflow:auto">
-                  <table style="width:100%; border-collapse:collapse" id="tableEditor">
-                    <thead id="tableHead"></thead>
-                    <tbody id="tableBody"></tbody>
-                  </table>
-                </div>
-
-                <textarea class="hidden-field" name="tableRowsRaw" id="tableRowsRaw"><%= defaults.tableRowsRaw || '' %></textarea>
+          <!-- 4. Isi Surat -->
+          <div class="fsec">
+            <p class="fsec-title">4 · Isi Surat</p>
+            <div class="field">
+              <div class="quill-wrap quill-wrap--lg">
+                <div id="bodyEditor"></div>
               </div>
-            </label>
-            <label class="span-2">
-              Detail Acara (opsional, format: Kunci: Nilai per baris)
-              <textarea name="detailsRaw" rows="6" placeholder="Hari, tanggal: Kamis, 8 Mei 2025\nWaktu: 09.00 WIB s.d selesai\nMedia: Ruang Rapat ...\nAcara: Focus Group Discussion ..."><%= defaults.detailsRaw || '' %></textarea>
-            </label>
+              <textarea class="hidden-field" name="body"     id="body"><%= defaults.body %></textarea>
+              <textarea class="hidden-field" name="bodyHtml" id="bodyHtml"><%= defaults.bodyHtml||'' %></textarea>
+            </div>
           </div>
-        </div>
 
-        <div class="grid">
-          <label class="span-2">
-            Kalimat Penutup
-            <input name="closing" value="<%= defaults.closing %>" />
-          </label>
-          <label>
-            Nama Penandatangan
-            <input name="signatoryName" value="<%= defaults.signatoryName %>" />
-          </label>
-          <label>
-            Jabatan Penandatangan
-            <input name="signatoryTitle" value="<%= defaults.signatoryTitle %>" />
-          </label>
-        </div>
+          <!-- 5. Penandatangan -->
+          <div class="fsec">
+            <p class="fsec-title">5 · Penandatangan</p>
+            <div class="grid" style="gap:12px">
+              <label class="span-2">
+                Kalimat Penutup
+                <input name="closing" value="<%= defaults.closing||'Hormat kami,' %>" placeholder="Hormat kami," />
+              </label>
+              <label>
+                Nama Penandatangan
+                <input name="signatoryName" value="<%= defaults.signatoryName %>" placeholder="Dr. Nama Lengkap, M.T." />
+              </label>
+              <label>
+                Jabatan
+                <input name="signatoryTitle" value="<%= defaults.signatoryTitle %>" placeholder="Kepala Laboratorium" />
+              </label>
+            </div>
+          </div>
 
-          <div class="actions">
-            <button type="submit" class="btn">Preview Surat</button>
+          <!-- 6. Extras Surat Tugas (conditional) -->
+          <div id="taskExtras" style="display:none">
+            <div class="fsec">
+              <p class="fsec-title">6 · Data Surat Tugas</p>
+              <div class="grid" style="gap:12px">
+                <label>
+                  NIP Penandatangan (opsional)
+                  <input name="signatoryNip" value="<%= defaults.signatoryNip||'' %>" placeholder="NIP. 123456789" />
+                </label>
+                <label class="span-2">
+                  Detail Acara <span class="muted small">(format: Kunci: Nilai, satu per baris)</span>
+                  <textarea name="detailsRaw" rows="5" placeholder="Hari, tanggal: Kamis, 8 Mei 2026&#10;Waktu: 09.00 WIB s.d selesai&#10;Tempat: Ruang Rapat ...&#10;Acara: Focus Group Discussion"><%= defaults.detailsRaw||'' %></textarea>
+                </label>
+                <div class="span-2 field">
+                  <span>Data Peserta / Tabel <span class="muted small" id="tableHint"></span></span>
+                  <div class="paper" style="padding:12px; border-radius:12px">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap">
+                      <span class="muted small">Klik <strong>+ Baris</strong> untuk menambah peserta.</span>
+                      <button class="btn ghost" type="button" id="addRowBtn" style="height:38px; padding:0 14px; min-width:auto">+ Baris</button>
+                    </div>
+                    <div style="overflow:auto">
+                      <table style="width:100%; border-collapse:collapse" id="tableEditor">
+                        <thead id="tableHead"></thead>
+                        <tbody id="tableBody"></tbody>
+                      </table>
+                    </div>
+                    <textarea class="hidden-field" name="tableRowsRaw" id="tableRowsRaw"><%= defaults.tableRowsRaw||'' %></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="submit-bar">
+            <button type="submit" class="btn">Preview Surat →</button>
           </div>
         </form>
-
-        <script>
-          (function () {
-            var select = document.getElementById('fontSelect');
-            var custom = document.getElementById('fontCustom');
-            var templateSelect = document.getElementById('templateSelect');
-            var taskExtras = document.getElementById('taskExtras');
-            if (!select) return;
-
-            var stacks = {
-              calibri: 'Calibri, "Segoe UI", Arial, sans-serif',
-              arial: 'Arial, Helvetica, sans-serif',
-              times: '"Times New Roman", Times, serif',
-              georgia: 'Georgia, "Times New Roman", serif',
-              tahoma: 'Tahoma, "Segoe UI", Arial, sans-serif',
-              verdana: 'Verdana, "Segoe UI", Arial, sans-serif',
-              trebuchet: '"Trebuchet MS", "Segoe UI", Arial, sans-serif',
-              garamond: 'Garamond, "Times New Roman", serif',
-              courier: '"Courier New", Courier, monospace',
-              system: 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
-            };
-
-            function apply() {
-              var key = select.value;
-              var stack = stacks[key] || stacks.calibri;
-              var customValue = (custom && custom.value ? custom.value.trim() : '');
-              document.documentElement.style.setProperty('--uiFont', customValue || stack);
-            }
-
-            function applyTemplate() {
-              if (!templateSelect || !taskExtras) return;
-              var t = String(templateSelect.value || 'DEFAULT').toUpperCase();
-              var isTask = t !== 'DEFAULT';
-              taskExtras.style.display = isTask ? 'block' : 'none';
-
-              if (isTask) {
-                buildTableForTemplate(t);
-              }
-            }
-
-            function columnsForTemplate(t) {
-              if (t === 'SURAT_TUGAS') return ['Nama', 'NIM'];
-              if (t === 'SURAT_TUGAS_IN_HOUSE_TRAINING') return ['Nama', 'Fakultas'];
-              return ['Nama', 'NIP', 'Fakultas'];
-            }
-
-            function buildTableForTemplate(t) {
-              var head = document.getElementById('tableHead');
-              var body = document.getElementById('tableBody');
-              var raw = document.getElementById('tableRowsRaw');
-              var addBtn = document.getElementById('addRowBtn');
-              var hint = document.getElementById('tableHint');
-              if (!head || !body || !raw || !addBtn) return;
-
-              var cols = columnsForTemplate(t);
-              hint.textContent = 'Kolom: ' + cols.join(', ') + '. Klik + untuk menambah baris.';
-
-              function esc(s) { return String(s || '').replace(/[&<>\"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]); }); }
-
-              function renderHead() {
-                var ths = '<th style="text-align:center; padding:8px; border-bottom:1px solid var(--line); width:56px">No</th>';
-                for (var i = 0; i < cols.length; i++) {
-                  ths += '<th style="text-align:left; padding:8px; border-bottom:1px solid var(--line)">' + esc(cols[i]) + '</th>';
-                }
-                ths += '<th style="text-align:left; padding:8px; border-bottom:1px solid var(--line); width:86px">Aksi</th>';
-                head.innerHTML = '<tr>' + ths + '</tr>';
-              }
-
-              function serialize() {
-                var rows = Array.prototype.slice.call(body.querySelectorAll('tr'));
-                var lines = [];
-                for (var r = 0; r < rows.length; r++) {
-                  var inputs = rows[r].querySelectorAll('input[data-col]');
-                  var parts = [];
-                  for (var j = 0; j < inputs.length; j++) {
-                    parts.push(String(inputs[j].value || '').trim());
-                  }
-                  if (parts.some(function (p) { return p; })) {
-                    lines.push(parts.join('|'));
-                  }
-                }
-                raw.value = lines.join('\n');
-              }
-
-              function renumber() {
-                var nums = body.querySelectorAll('[data-no]');
-                for (var i = 0; i < nums.length; i++) {
-                  nums[i].textContent = String(i + 1);
-                }
-              }
-
-              function addRow(values) {
-                values = Array.isArray(values) ? values : [];
-                var tds = '<td data-no style="text-align:center; padding:8px; border-bottom:1px solid var(--line)"></td>';
-                for (var i = 0; i < cols.length; i++) {
-                  var v = values[i] != null ? String(values[i]) : '';
-                  tds += '<td style="padding:6px 8px; border-bottom:1px solid var(--line)">' +
-                    '<input data-col="' + esc(cols[i]) + '" value="' + esc(v) + '" style="border-radius:10px; padding:8px 10px" />' +
-                    '</td>';
-                }
-                tds += '<td style="padding:6px 8px; border-bottom:1px solid var(--line)">' +
-                  '<button class="btn ghost" type="button" data-del style="height:36px; padding:0 12px; min-width:auto">Hapus</button>' +
-                  '</td>';
-
-                var tr = document.createElement('tr');
-                tr.innerHTML = tds;
-
-                tr.addEventListener('input', function () { serialize(); });
-                tr.querySelector('[data-del]').addEventListener('click', function () {
-                  tr.remove();
-                  renumber();
-                  serialize();
-                });
-
-                body.appendChild(tr);
-                renumber();
-                serialize();
-              }
-
-              function parseExistingRaw() {
-                var text = String(raw.value || '').trim();
-                if (!text) return [];
-                return text.split(/\r\n|\n|\r/).map(function (l) {
-                  return l.split('|').map(function (p) { return String(p || '').trim(); });
-                }).filter(function (parts) { return parts.some(function (p) { return p; }); });
-              }
-
-              // Rebuild editor whenever template changes
-              renderHead();
-              body.innerHTML = '';
-
-              var existing = parseExistingRaw();
-              if (existing.length) {
-                for (var i = 0; i < existing.length; i++) {
-                  addRow(existing[i].slice(0, cols.length));
-                }
-              } else {
-                addRow([]);
-              }
-
-              addBtn.onclick = function () { addRow([]); };
-            }
-
-            select.addEventListener('change', apply);
-            if (custom) custom.addEventListener('input', apply);
-            if (templateSelect) templateSelect.addEventListener('change', applyTemplate);
-            apply();
-            applyTemplate();
-
-            function exec(cmd) {
-              try { document.execCommand(cmd, false, null); } catch (e) { /* ignore */ }
-            }
-
-            function insertImage(target) {
-              var editor = target === 'recipient' ? document.getElementById('recipientEditor') : document.getElementById('bodyEditor');
-              if (!editor) return;
-
-              var input = document.createElement('input');
-              input.type = 'file';
-              input.accept = 'image/*';
-              input.onchange = function () {
-                var file = input.files && input.files[0];
-                if (!file) {
-                  editor.focus();
-                  return;
-                }
-                var reader = new FileReader();
-                reader.onload = function () {
-                  var src = String(reader.result || '');
-                  editor.focus();
-                  try {
-                    document.execCommand('insertHTML', false, '<img alt="" src="' + src.replace(/"/g, '&quot;') + '" style="max-width:100%; height:auto" />');
-                  } catch (e) {
-                    var img = document.createElement('img');
-                    img.src = src;
-                    img.alt = '';
-                    img.style.maxWidth = '100%';
-                    img.style.height = 'auto';
-                    editor.appendChild(img);
-                  }
-                };
-                reader.readAsDataURL(file);
-              };
-              editor.focus();
-              input.click();
-            }
-
-            var __syncTimer = null;
-            function syncEditorsImmediate() {
-              if (__syncTimer) {
-                clearTimeout(__syncTimer);
-                __syncTimer = null;
-              }
-
-              var bodyEditor = document.getElementById('bodyEditor');
-              var bodyHtml = document.getElementById('bodyHtml');
-              var bodyPlain = document.getElementById('body');
-              if (bodyEditor && bodyHtml && bodyPlain) {
-                bodyHtml.value = bodyEditor.innerHTML;
-                bodyPlain.value = bodyEditor.innerText;
-              }
-
-              var recEditor = document.getElementById('recipientEditor');
-              var recHtml = document.getElementById('recipientAddressHtml');
-              var recPlain = document.getElementById('recipientAddress');
-              if (recEditor && recHtml && recPlain) {
-                recHtml.value = recEditor.innerHTML;
-                recPlain.value = recEditor.innerText;
-              }
-            }
-
-            function syncEditors() {
-              if (__syncTimer) clearTimeout(__syncTimer);
-              // Debounce: base64 images make innerHTML huge; syncing every keystroke causes lag.
-              __syncTimer = setTimeout(syncEditorsImmediate, 200);
-            }
-
-            function clearSelectedImages() {
-              var selected = document.querySelectorAll('.rt-editor img.rt-selected');
-              for (var i = 0; i < selected.length; i++) {
-                selected[i].classList.remove('rt-selected');
-              }
-            }
-
-            function selectImage(img) {
-              clearSelectedImages();
-              img.classList.add('rt-selected');
-            }
-
-            document.addEventListener('click', function (e) {
-              var btn = e.target && e.target.closest ? e.target.closest('button') : null;
-              if (!btn) return;
-
-              var cmd = btn.getAttribute('data-rt-cmd');
-              if (cmd) {
-                e.preventDefault();
-                var editor = document.activeElement;
-                var isEditor = editor && (editor.id === 'recipientEditor' || editor.id === 'bodyEditor');
-                var editorId = isEditor ? editor.id : null;
-                exec(cmd);
-                syncEditors();
-                if (editorId) {
-                  var ed = document.getElementById(editorId);
-                  if (ed) ed.focus();
-                }
-                return;
-              }
-
-              var imgTarget = btn.getAttribute('data-rt-img');
-              if (imgTarget) {
-                e.preventDefault();
-                insertImage(imgTarget);
-                setTimeout(syncEditors, 0);
-                return;
-              }
-            });
-
-            // Select images on click so user can delete them easily.
-            document.addEventListener('click', function (e) {
-              var img = e.target && e.target.tagName === 'IMG' ? e.target : null;
-              if (!img) return;
-              var editor = img.closest && img.closest('.rt-editor') ? img.closest('.rt-editor') : null;
-              if (!editor) return;
-              selectImage(img);
-            });
-
-            // Right-click delete on image.
-            document.addEventListener('contextmenu', function (e) {
-              var img = e.target && e.target.tagName === 'IMG' ? e.target : null;
-              if (!img) return;
-              var editor = img.closest && img.closest('.rt-editor') ? img.closest('.rt-editor') : null;
-              if (!editor) return;
-              e.preventDefault();
-              var ok = confirm('Hapus gambar ini?');
-              if (!ok) return;
-              img.remove();
-              syncEditorsImmediate();
-            });
-
-            // Delete/backspace removes selected images.
-            document.addEventListener('keydown', function (e) {
-              if (!(e.key === 'Delete' || e.key === 'Backspace')) return;
-              var active = document.activeElement;
-              var isEditor = active && (active.id === 'recipientEditor' || active.id === 'bodyEditor');
-              if (!isEditor) return;
-
-              var selected = active.querySelectorAll('img.rt-selected');
-              if (!selected || !selected.length) return;
-              e.preventDefault();
-              for (var i = 0; i < selected.length; i++) selected[i].remove();
-              syncEditorsImmediate();
-            });
-
-            var form = document.querySelector('form[action="/letters/preview"]');
-            if (form) {
-              form.addEventListener('submit', function () {
-                syncEditorsImmediate();
-              });
-            }
-
-            var bodyEditor = document.getElementById('bodyEditor');
-            if (bodyEditor) {
-              bodyEditor.addEventListener('input', syncEditors);
-              bodyEditor.addEventListener('blur', syncEditorsImmediate);
-              bodyEditor.addEventListener('click', function() { this.focus(); });
-            }
-            var recipientEditor = document.getElementById('recipientEditor');
-            if (recipientEditor) {
-              recipientEditor.addEventListener('input', syncEditors);
-              recipientEditor.addEventListener('blur', syncEditorsImmediate);
-              recipientEditor.addEventListener('click', function() { this.focus(); });
-            }
-            syncEditorsImmediate();
-          })();
-        </script>
       </main>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+    <script>
+    (function () {
+      /* ── Quill toolbar configs ── */
+      var TB_FULL = [
+        [{ header: [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        [{ indent: '-1' }, { indent: '+1' }],
+        [{ align: [] }],
+        ['link', 'image'],
+        ['blockquote'],
+        ['clean']
+      ];
+      var TB_SIMPLE = [
+        ['bold', 'italic', 'underline'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['link'],
+        ['clean']
+      ];
+
+      var bodyQuill = new Quill('#bodyEditor', {
+        theme: 'snow',
+        placeholder: 'Tulis isi surat di sini…',
+        modules: { toolbar: TB_FULL }
+      });
+
+      var recipientQuill = new Quill('#recipientEditor', {
+        theme: 'snow',
+        placeholder: 'Alamat penerima (opsional)…',
+        modules: { toolbar: TB_SIMPLE }
+      });
+
+      /* ── Set initial HTML values ── */
+      var initBody      = <%- JSON.stringify(defaults.bodyHtml      || '') %>;
+      var initRecipient = <%- JSON.stringify(defaults.recipientAddressHtml || '') %>;
+      if (initBody)      bodyQuill.root.innerHTML      = initBody;
+      if (initRecipient) recipientQuill.root.innerHTML = initRecipient;
+
+      /* ── Sync Quill → hidden textareas ── */
+      function syncAll() {
+        document.getElementById('bodyHtml').value             = bodyQuill.root.innerHTML;
+        document.getElementById('body').value                 = bodyQuill.getText().trim();
+        document.getElementById('recipientAddressHtml').value = recipientQuill.root.innerHTML;
+        document.getElementById('recipientAddress').value     = recipientQuill.getText().trim();
+      }
+
+      document.getElementById('letterForm').addEventListener('submit', function () {
+        syncAll();
+      });
+
+      /* ── Font preview ── */
+      var fontStacks = {
+        calibri:   'Calibri, "Segoe UI", Arial, sans-serif',
+        arial:     'Arial, Helvetica, sans-serif',
+        times:     '"Times New Roman", Times, serif',
+        georgia:   'Georgia, "Times New Roman", serif',
+        tahoma:    'Tahoma, "Segoe UI", Arial, sans-serif',
+        verdana:   'Verdana, "Segoe UI", Arial, sans-serif',
+        trebuchet: '"Trebuchet MS", "Segoe UI", Arial, sans-serif',
+        garamond:  'Garamond, "Times New Roman", serif',
+        courier:   '"Courier New", Courier, monospace',
+        system:    'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
+      };
+      var fontSelect  = document.getElementById('fontSelect');
+      var fontCustom  = document.getElementById('fontCustom');
+      function applyFont() {
+        var stack = (fontCustom && fontCustom.value.trim()) || fontStacks[fontSelect.value] || fontStacks.calibri;
+        document.documentElement.style.setProperty('--uiFont', stack);
+      }
+      if (fontSelect) fontSelect.addEventListener('change', applyFont);
+      if (fontCustom) fontCustom.addEventListener('input', applyFont);
+      applyFont();
+
+      /* ── Template switcher (show/hide Surat Tugas extras) ── */
+      var templateSelect = document.getElementById('templateSelect');
+      var taskExtras     = document.getElementById('taskExtras');
+
+      function columnsForTemplate(t) {
+        if (t === 'SURAT_TUGAS') return ['Nama', 'NIM'];
+        if (t === 'SURAT_TUGAS_IN_HOUSE_TRAINING') return ['Nama', 'Fakultas'];
+        return ['Nama', 'NIP', 'Fakultas'];
+      }
+
+      function esc(s) {
+        return String(s||'').replace(/[&<>"']/g, function(c){
+          return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+        });
+      }
+
+      function buildTable(t) {
+        var head   = document.getElementById('tableHead');
+        var body   = document.getElementById('tableBody');
+        var raw    = document.getElementById('tableRowsRaw');
+        var addBtn = document.getElementById('addRowBtn');
+        var hint   = document.getElementById('tableHint');
+        if (!head || !body || !raw || !addBtn) return;
+
+        var cols = columnsForTemplate(t);
+        if (hint) hint.textContent = '— kolom: ' + cols.join(', ');
+
+        /* header */
+        var ths = '<th style="width:44px;text-align:center;padding:6px 8px;border-bottom:1px solid var(--line)">No</th>';
+        cols.forEach(function(c){ ths += '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)">' + esc(c) + '</th>'; });
+        ths += '<th style="width:80px;padding:6px 8px;border-bottom:1px solid var(--line)"></th>';
+        head.innerHTML = '<tr>' + ths + '</tr>';
+
+        function serialize() {
+          var lines = [];
+          Array.prototype.forEach.call(body.querySelectorAll('tr'), function(tr){
+            var parts = [];
+            Array.prototype.forEach.call(tr.querySelectorAll('input[data-col]'), function(inp){
+              parts.push(inp.value.trim());
+            });
+            if (parts.some(function(p){ return p; })) lines.push(parts.join('|'));
+          });
+          raw.value = lines.join('\n');
+        }
+
+        function renumber() {
+          Array.prototype.forEach.call(body.querySelectorAll('[data-no]'), function(el, i){ el.textContent = i+1; });
+        }
+
+        function addRow(vals) {
+          vals = Array.isArray(vals) ? vals : [];
+          var tds = '<td data-no style="text-align:center;padding:6px 8px;border-bottom:1px solid var(--line)"></td>';
+          cols.forEach(function(c, i){
+            tds += '<td style="padding:4px 6px;border-bottom:1px solid var(--line)">'
+              + '<input data-col="' + esc(c) + '" value="' + esc(vals[i]||'') + '" style="border-radius:8px;padding:6px 10px" />'
+              + '</td>';
+          });
+          tds += '<td style="padding:4px 6px;border-bottom:1px solid var(--line)">'
+            + '<button class="btn ghost" type="button" data-del style="height:34px;padding:0 10px;min-width:auto;font-size:13px">Hapus</button>'
+            + '</td>';
+          var tr = document.createElement('tr');
+          tr.innerHTML = tds;
+          tr.addEventListener('input', serialize);
+          tr.querySelector('[data-del]').addEventListener('click', function(){ tr.remove(); renumber(); serialize(); });
+          body.appendChild(tr);
+          renumber();
+          serialize();
+        }
+
+        /* parse existing raw data */
+        body.innerHTML = '';
+        var existing = String(raw.value||'').trim();
+        if (existing) {
+          existing.split(/\r?\n/).forEach(function(line){
+            var parts = line.split('|').map(function(p){ return p.trim(); });
+            if (parts.some(Boolean)) addRow(parts.slice(0, cols.length));
+          });
+        } else {
+          addRow([]);
+        }
+
+        addBtn.onclick = function(){ addRow([]); };
+      }
+
+      function applyTemplate() {
+        if (!templateSelect || !taskExtras) return;
+        var t = String(templateSelect.value||'DEFAULT').toUpperCase();
+        var isTask = t !== 'DEFAULT';
+        taskExtras.style.display = isTask ? 'block' : 'none';
+        if (isTask) buildTable(t);
+      }
+
+      if (templateSelect) templateSelect.addEventListener('change', applyTemplate);
+      applyTemplate();
+    })();
+    </script>
   </body>
 </html>
