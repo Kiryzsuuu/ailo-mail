@@ -1559,15 +1559,17 @@ app.get('/verify/:token', async (req, res, next) => {
   // List templates
   app.get('/cert', requireAuth, async (req, res, next) => {
     try {
+      const currentUser = res.locals.currentUser;
       const templates = await CertTemplate.find().sort({ createdAt: -1 }).lean();
-      res.render('cert/list', { currentUser: req.user, active: 'cert', templates });
+      res.render('cert/list', { currentUser, active: 'cert', templates });
     } catch (e) { next(e); }
   });
 
   // New template form
   app.get('/cert/new', requireAuth, isAdmin, (req, res) => {
+    const currentUser = res.locals.currentUser;
     res.render('cert/designer', {
-      currentUser: req.user,
+      currentUser,
       active: 'cert',
       template: { _id: '', name: '', orientation: 'landscape', bgColor: '#ffffff', backgroundPath: '', elements: [] },
     });
@@ -1576,15 +1578,17 @@ app.get('/verify/:token', async (req, res, next) => {
   // Edit template form
   app.get('/cert/:id/edit', requireAuth, isAdmin, async (req, res, next) => {
     try {
+      const currentUser = res.locals.currentUser;
       const template = await CertTemplate.findById(req.params.id).lean();
       if (!template) return res.status(404).send('Template tidak ditemukan.');
-      res.render('cert/designer', { currentUser: req.user, active: 'cert', template });
+      res.render('cert/designer', { currentUser, active: 'cert', template });
     } catch (e) { next(e); }
   });
 
   // Save / create template (multipart because background image optional)
   app.post('/cert/save', requireAuth, isAdmin, certBgUpload.single('bgFile'), async (req, res, next) => {
     try {
+      const currentUser = res.locals.currentUser;
       const { id, name, orientation, bgColor, elements: elementsJson } = req.body;
       const elements = JSON.parse(elementsJson || '[]');
 
@@ -1594,7 +1598,7 @@ app.get('/verify/:token', async (req, res, next) => {
       if (id) {
         await CertTemplate.findByIdAndUpdate(id, { name, orientation, bgColor, backgroundPath, elements });
       } else {
-        await CertTemplate.create({ name, orientation, bgColor, backgroundPath, elements, createdBy: req.user._id });
+        await CertTemplate.create({ name, orientation, bgColor, backgroundPath, elements, createdBy: currentUser._id });
       }
       res.redirect('/cert');
     } catch (e) { next(e); }
@@ -1636,9 +1640,10 @@ app.get('/verify/:token', async (req, res, next) => {
   // Generate single cert — form
   app.get('/cert/:id/generate', requireAuth, async (req, res, next) => {
     try {
+      const currentUser = res.locals.currentUser;
       const template = await CertTemplate.findById(req.params.id).lean();
       if (!template) return res.status(404).send('Template tidak ditemukan.');
-      res.render('cert/generate', { currentUser: req.user, active: 'cert', template, fieldLabel, FIELD_LABELS });
+      res.render('cert/generate', { currentUser, active: 'cert', template, fieldLabel, FIELD_LABELS });
     } catch (e) { next(e); }
   });
 
@@ -1661,9 +1666,10 @@ app.get('/verify/:token', async (req, res, next) => {
   // Bulk Excel — form
   app.get('/cert/:id/bulk', requireAuth, isAdmin, async (req, res, next) => {
     try {
+      const currentUser = res.locals.currentUser;
       const template = await CertTemplate.findById(req.params.id).lean();
       if (!template) return res.status(404).send('Template tidak ditemukan.');
-      res.render('cert/bulk', { currentUser: req.user, active: 'cert', template, fieldLabel, FIELD_LABELS });
+      res.render('cert/bulk', { currentUser, active: 'cert', template, fieldLabel, FIELD_LABELS });
     } catch (e) { next(e); }
   });
 

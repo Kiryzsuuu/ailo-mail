@@ -9,26 +9,7 @@
   </head>
   <body>
     <div class="shell">
-      <header class="nav">
-        <a class="brand" href="/dashboard">
-          <img class="brand-logo" src="/logo.png" alt="AILO" />
-          <div class="brand-text">
-            <div class="brand-title">Web Mailer</div>
-            <div class="brand-subtitle"><%= currentUser.email %> • <%= currentUser.role %></div>
-          </div>
-        </a>
-
-        <nav class="nav-links" aria-label="Navigasi">
-          <a href="/mailer">Mailer</a>
-          <a href="/dashboard">Dashboard</a>
-        </nav>
-
-        <div class="nav-actions">
-          <form class="inline" action="/logout" method="post">
-            <button class="btn ghost" type="submit">Logout</button>
-          </form>
-        </div>
-      </header>
+      <%- include('./partials/nav', { currentUser, active: 'upload' }) %>
 
       <main class="page">
         <h1 class="app-title">UPLOAD DOKUMEN (PDF) UNTUK E-SIGN</h1>

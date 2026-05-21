@@ -9,18 +9,7 @@
   </head>
   <body>
     <div class="shell">
-      <header class="nav">
-        <a class="brand" href="/dashboard">
-          <img class="brand-logo" src="/logo.png" alt="AILO" />
-          <div class="brand-text">
-            <div class="brand-title">Approval</div>
-            <div class="brand-subtitle"><%= currentUser.email %> • <%= currentUser.role %></div>
-          </div>
-        </a>
-        <div class="nav-actions">
-          <a class="btn ghost" href="/dashboard">Dashboard</a>
-        </div>
-      </header>
+      <%- include('./partials/nav', { currentUser, active: 'approvals' }) %>
 
       <main class="page">
         <h1 class="app-title">APPROVAL</h1>

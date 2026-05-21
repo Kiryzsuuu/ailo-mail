@@ -360,8 +360,8 @@ textarea { resize: vertical; }
 }
 
 .hero-logo {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   margin-bottom: 20px;
 }
 
@@ -430,7 +430,7 @@ textarea { resize: vertical; }
 
 .feature-card:hover {
   border-color: var(--primary);
-  background: linear-gradient(135deg, rgba(11, 122, 141, 0.08) 0%, rgba(11, 122, 141, 0.02) 100%);
+  background: linear-gradient(135deg, #dff2f5 0%, #f0fafc 100%);
   transform: translateY(-8px);
   box-shadow: 0 12px 32px rgba(11, 122, 141, 0.15);
 }
@@ -1068,8 +1068,8 @@ textarea { resize: vertical; }
   }
 
   .hero-logo {
-    width: 60px;
-    height: 60px;
+    width: 90px;
+    height: 90px;
   }
 
   .hero-title {

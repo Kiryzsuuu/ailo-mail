@@ -1,4 +1,11 @@
-<header class="nav nav--white" style="position:sticky; top:0; z-index:100">
+<%
+  var _role = String(currentUser.role || '').toUpperCase();
+  var _isAdmin  = ['ADMIN','SUPREME','SUPERADMIN'].includes(_role);
+  var _isSuper  = ['SUPREME','SUPERADMIN'].includes(_role);
+  var _isUser   = _role === 'USER';
+  var _canApprove = ['ADMIN','SUPREME','SUPERADMIN'].includes(_role);
+%>
+<header class="nav nav--white">
   <a class="brand" href="/">
     <img class="brand-logo" src="/assets/logo-ailo.png" alt="AILO" />
     <div class="brand-text">
@@ -7,17 +14,24 @@
   </a>
 
   <nav class="nav-links" aria-label="Navigasi">
-    <a href="/mailer" style="<%= (typeof active !== 'undefined' && active === 'mailer') ? 'color:var(--primary)' : '' %>">Mailer</a>
-    <a href="/dashboard" style="<%= (typeof active !== 'undefined' && active === 'dashboard') ? 'color:var(--primary)' : '' %>">Dashboard</a>
-    <a href="/cert" style="<%= (typeof active !== 'undefined' && active === 'cert') ? 'color:var(--primary)' : '' %>">Sertifikat</a>
-    <% if (['ADMIN','SUPREME','SUPERADMIN'].includes(String(currentUser.role).toUpperCase())) { %>
-      <a href="/approvals" style="<%= (typeof active !== 'undefined' && active === 'approvals') ? 'color:var(--primary)' : '' %>">Approvals</a>
+    <a href="/mailer"    <%= (typeof active !== 'undefined' && active === 'mailer')    ? 'style="color:var(--primary)"' : '' %>>Mailer</a>
+    <a href="/dashboard" <%= (typeof active !== 'undefined' && active === 'dashboard') ? 'style="color:var(--primary)"' : '' %>>Dashboard</a>
+    <a href="/cert"      <%= (typeof active !== 'undefined' && active === 'cert')      ? 'style="color:var(--primary)"' : '' %>>Sertifikat</a>
+    <% if (_isUser) { %>
+      <a href="/upload" <%= (typeof active !== 'undefined' && active === 'upload') ? 'style="color:var(--primary)"' : '' %>>Upload Dokumen</a>
+    <% } %>
+    <% if (_canApprove) { %>
+      <a href="/approvals" <%= (typeof active !== 'undefined' && active === 'approvals') ? 'style="color:var(--primary)"' : '' %>>Approvals</a>
+    <% } %>
+    <% if (_isSuper) { %>
+      <a href="/admin/users" <%= (typeof active !== 'undefined' && active === 'admin-users') ? 'style="color:var(--primary)"' : '' %>>Users</a>
+      <a href="/admin/logs"  <%= (typeof active !== 'undefined' && active === 'admin-logs')  ? 'style="color:var(--primary)"' : '' %>>Logs</a>
     <% } %>
   </nav>
 
   <div class="nav-actions">
     <div class="profile-dropdown">
-      <button class="btn ghost" id="profileToggle" type="button" style="gap:8px">
+      <button class="btn ghost" id="profileToggle" type="button">
         <span class="profile-avatar" aria-hidden="true">
           <img src="/assets/avatar-placeholder.svg" alt="" />
         </span>
@@ -26,25 +40,117 @@
       <div class="dropdown-menu" id="dropdownMenu">
         <a href="/profile" class="dropdown-item">Edit Profile</a>
         <div class="dropdown-divider"></div>
-        <form action="/logout" method="post" style="margin:0">
-          <button type="submit" class="dropdown-item dropdown-logout" style="width:100%;text-align:left;border:none;background:none;cursor:pointer;font-family:inherit;font-size:14px;padding:12px 16px">Logout</button>
-        </form>
+        <button type="button" class="dropdown-item dropdown-logout" id="logoutTrigger">Logout</button>
       </div>
     </div>
   </div>
+
+  <!-- Logout Confirmation Modal -->
+  <div class="modal" id="logoutModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Konfirmasi Logout</h2>
+        <button type="button" class="modal-close" id="closeModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Apakah Anda yakin ingin logout? Anda akan perlu login kembali untuk mengakses akun Anda.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelLogout">Batal</button>
+        <button type="button" class="btn btn-primary" id="confirmLogout">Ya, Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const profileToggle = document.getElementById('profileToggle');
+    const dropdownMenu  = document.getElementById('dropdownMenu');
+    const logoutModal   = document.getElementById('logoutModal');
+    const logoutTrigger = document.getElementById('logoutTrigger');
+    const closeModal    = document.getElementById('closeModal');
+    const cancelLogout  = document.getElementById('cancelLogout');
+    const confirmLogout = document.getElementById('confirmLogout');
+
+    function positionDropdown() {
+      if (!profileToggle || !dropdownMenu) return;
+      const rect = profileToggle.getBoundingClientRect();
+
+      dropdownMenu.style.display    = 'block';
+      dropdownMenu.style.visibility = 'hidden';
+      dropdownMenu.style.position   = 'fixed';
+
+      const menuWidth = dropdownMenu.offsetWidth || 220;
+      const gutter    = 12;
+      const top       = Math.round(rect.bottom + 6);
+      const left      = Math.round(Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - gutter));
+      const safeLeft  = Math.max(gutter, left);
+
+      dropdownMenu.style.top        = `${top}px`;
+      dropdownMenu.style.left       = `${safeLeft}px`;
+      dropdownMenu.style.right      = 'auto';
+      dropdownMenu.style.visibility = '';
+      dropdownMenu.style.display    = '';
+    }
+
+    function openDropdown()  { if (!dropdownMenu) return; dropdownMenu.classList.add('active');    positionDropdown(); }
+    function closeDropdown() { if (!dropdownMenu) return; dropdownMenu.classList.remove('active'); }
+
+    if (profileToggle) {
+      profileToggle.addEventListener('click', () => {
+        dropdownMenu.classList.contains('active') ? closeDropdown() : openDropdown();
+      });
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.profile-dropdown')) closeDropdown();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeDropdown();
+      });
+      window.addEventListener('resize', () => {
+        if (dropdownMenu.classList.contains('active')) positionDropdown();
+      });
+      window.addEventListener('scroll', () => {
+        if (dropdownMenu.classList.contains('active')) positionDropdown();
+      }, { passive: true });
+    }
+
+    if (logoutTrigger) {
+      logoutTrigger.addEventListener('click', () => {
+        closeDropdown();
+        logoutModal.classList.add('active');
+      });
+    }
+
+    if (closeModal || cancelLogout) {
+      const closeHandler = () => logoutModal.classList.remove('active');
+      if (closeModal)   closeModal.addEventListener('click', closeHandler);
+      if (cancelLogout) cancelLogout.addEventListener('click', closeHandler);
+    }
+
+    if (logoutModal) {
+      logoutModal.addEventListener('click', (e) => {
+        if (e.target === logoutModal) logoutModal.classList.remove('active');
+      });
+    }
+
+    if (confirmLogout) {
+      confirmLogout.addEventListener('click', () => {
+        confirmLogout.disabled    = true;
+        confirmLogout.textContent = 'Logging out...';
+        fetch('/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          credentials: 'include',
+        })
+        .then((res) => {
+          if (res.redirected) { window.location.href = res.url; }
+          else                { window.location.href = '/login'; }
+        })
+        .catch(() => {
+          confirmLogout.disabled    = false;
+          confirmLogout.textContent = 'Ya, Logout';
+          alert('Logout gagal. Silakan coba lagi.');
+        });
+      });
+    }
+  </script>
 </header>
-<script>
-(function(){
-  var toggle = document.getElementById('profileToggle');
-  var menu   = document.getElementById('dropdownMenu');
-  if (!toggle || !menu) return;
-  toggle.addEventListener('click', function(e){
-    e.stopPropagation();
-    var rect = toggle.getBoundingClientRect();
-    menu.style.top  = (rect.bottom + 6) + 'px';
-    menu.style.left = (rect.right - 220) + 'px';
-    menu.classList.toggle('active');
-  });
-  document.addEventListener('click', function(){ menu.classList.remove('active'); });
-})();
-</script>

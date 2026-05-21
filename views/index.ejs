@@ -8,210 +8,328 @@
     <link rel="stylesheet" href="/print.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" />
     <style>
+      /* Override dots background for this page only */
+      body {
+        background-image: none;
+        background-color: #f4f6f9;
+      }
+
+      /* ── Page header ── */
+      .gen-header {
+        padding: 28px 0 20px;
+      }
+      .gen-header h1 {
+        margin: 0 0 4px;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: 0.3px;
+      }
+      .gen-header p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      /* ── Form card ── */
+      .form-card {
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+
+      .form-section {
+        padding: 22px 24px;
+        border-bottom: 1px solid var(--line);
+      }
+      .form-section:last-child { border-bottom: none; }
+
+      .section-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+      .section-num {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        background: var(--primary);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--text);
+      }
+
+      /* ── Field layout ── */
+      .field-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px 20px;
+      }
+      .field-grid .full { grid-column: 1 / -1; }
+
+      @media (max-width: 640px) {
+        .field-grid { grid-template-columns: 1fr; }
+        .field-grid .full { grid-column: 1; }
+        .form-section { padding: 18px 16px; }
+      }
+
+      .f-label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .f-label span {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .f-label input,
+      .f-label select,
+      .f-label textarea {
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        padding: 9px 12px;
+        font-size: 14px;
+        background: #fff;
+        transition: border-color 0.15s;
+        width: 100%;
+      }
+      .f-label input:focus,
+      .f-label select:focus,
+      .f-label textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(11,122,141,0.08);
+      }
+      .f-label textarea { resize: vertical; }
+
+      /* ── Quill ── */
       .ql-toolbar.ql-snow {
         border: none;
         border-bottom: 1px solid var(--line);
-        border-radius: 12px 12px 0 0;
-        background: rgba(11,19,32,0.025);
-        padding: 8px 10px;
+        border-radius: 10px 10px 0 0;
+        background: #fafafa;
+        padding: 7px 10px;
         flex-wrap: wrap;
       }
       .ql-container.ql-snow {
         border: none;
         font-family: var(--uiFont, Calibri, "Segoe UI", Arial, sans-serif);
-        font-size: 15px;
+        font-size: 14px;
         line-height: 1.6;
       }
-      .ql-editor { padding: 14px 16px; }
+      .ql-editor { padding: 12px 14px; }
       .ql-editor.ql-blank::before {
-        color: rgba(11,19,32,0.38);
+        color: rgba(11,19,32,0.35);
         font-style: normal;
       }
       .quill-wrap {
         border: 1px solid var(--line);
-        border-radius: 12px;
+        border-radius: 10px;
         overflow: hidden;
         background: #fff;
-        transition: border-color 0.18s;
+        transition: border-color 0.15s;
       }
-      .quill-wrap:focus-within { border-color: var(--primary); }
-      .quill-wrap--sm .ql-editor { min-height: 100px; }
-      .quill-wrap--lg .ql-editor { min-height: 300px; }
+      .quill-wrap:focus-within {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(11,122,141,0.08);
+      }
+      .quill-wrap--sm .ql-editor { min-height: 90px; }
+      .quill-wrap--lg .ql-editor { min-height: 260px; }
 
-      .fsec { margin-bottom: 28px; }
-      .fsec-title {
-        font-size: 11px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--muted);
-        margin: 0 0 10px;
+      /* ── Table editor ── */
+      .table-wrap {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+      }
+      .table-toolbar {
         display: flex;
         align-items: center;
-        gap: 10px;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: #fafafa;
+        border-bottom: 1px solid var(--line);
       }
-      .fsec-title::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: var(--line);
-      }
-      .grid-3 {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 12px;
-      }
-      @media (max-width: 720px) {
-        .grid-3 { grid-template-columns: 1fr 1fr; }
-      }
-      @media (max-width: 480px) {
-        .grid-3 { grid-template-columns: 1fr; }
-      }
+      .table-toolbar span { font-size: 13px; color: var(--muted); }
+      #tableEditor { width: 100%; border-collapse: collapse; }
+      #tableEditor th { padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--muted); background: #fafafa; border-bottom: 1px solid var(--line); }
+      #tableEditor td { padding: 4px 8px; border-bottom: 1px solid var(--line); }
+      #tableEditor tr:last-child td { border-bottom: none; }
+      #tableEditor input { border-radius: 7px; padding: 6px 9px; font-size: 13px; }
+
+      /* ── Submit bar ── */
       .submit-bar {
         display: flex;
-        justify-content: flex-end;
-        padding-top: 8px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 24px;
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        margin-bottom: 32px;
       }
+      .submit-bar .hint { font-size: 13px; color: var(--muted); }
       .submit-bar .btn {
-        padding: 14px 36px;
-        font-size: 16px;
-        border-radius: 14px;
+        padding: 12px 32px;
+        font-size: 15px;
+        font-weight: 700;
+        border-radius: 12px;
       }
+
+      .hidden-field { display: none !important; }
     </style>
   </head>
   <body>
     <div class="shell">
-      <header class="nav">
-        <a class="brand" href="/">
-          <img class="brand-logo" src="/logo.png" alt="AILO" />
-          <div class="brand-text">
-            <div class="brand-title">Web Mailer</div>
-          </div>
-        </a>
-        <nav class="nav-links" aria-label="Navigasi">
-          <a href="/mailer">Mailer</a>
-          <a href="https://ailo.telkomuniversity.ac.id/#research" target="_blank" rel="noreferrer">Research</a>
-          <a href="https://ailo.telkomuniversity.ac.id/#projects" target="_blank" rel="noreferrer">Projects</a>
-          <a href="https://ailo.telkomuniversity.ac.id/#team" target="_blank" rel="noreferrer">Team</a>
-          <a href="https://ailo.telkomuniversity.ac.id/#about" target="_blank" rel="noreferrer">About</a>
-        </nav>
-        <div class="nav-actions">
-          <a class="btn ghost" href="/dashboard">Dashboard</a>
-          <form class="inline" action="/logout" method="post">
-            <button class="btn" type="submit">Logout</button>
-          </form>
-        </div>
-      </header>
+      <%- include('./partials/nav', { currentUser, active: 'mailer' }) %>
 
       <main class="page">
-        <h1 class="app-title">Generator Surat</h1>
-        <p class="muted" style="margin:0 0 28px">Isi form di bawah, lalu klik <strong>Preview Surat</strong> untuk melihat dan mengunduh PDF.</p>
+        <div class="gen-header">
+          <h1>Generator Surat</h1>
+          <p>Isi form di bawah, lalu klik <strong>Preview Surat</strong> untuk melihat dan mengunduh PDF.</p>
+        </div>
 
         <form action="/letters/preview" method="post" id="letterForm">
 
-          <!-- 1. Jenis & Tampilan -->
-          <div class="fsec">
-            <p class="fsec-title">1 · Jenis &amp; Tampilan</p>
-            <div class="grid" style="gap:12px">
-              <label class="span-2">
-                Jenis Surat
-                <select name="template" id="templateSelect">
-                  <option value="DEFAULT"                    <%= (defaults.template||'DEFAULT')==='DEFAULT'                    ? 'selected':'' %>>Surat Umum (Default)</option>
-                  <option value="SURAT_TUGAS"                <%= defaults.template==='SURAT_TUGAS'                ? 'selected':'' %>>Surat Tugas</option>
-                  <option value="SURAT_TUGAS_PANDUAN"        <%= defaults.template==='SURAT_TUGAS_PANDUAN'        ? 'selected':'' %>>Surat Tugas Panduan</option>
-                  <option value="SURAT_TUGAS_TENAGA_AHLI"    <%= defaults.template==='SURAT_TUGAS_TENAGA_AHLI'    ? 'selected':'' %>>Surat Tugas Tenaga Ahli</option>
-                  <option value="SURAT_TUGAS_UNDANGAN"       <%= defaults.template==='SURAT_TUGAS_UNDANGAN'       ? 'selected':'' %>>Surat Tugas Undangan</option>
-                  <option value="SURAT_TUGAS_IN_HOUSE_TRAINING" <%= defaults.template==='SURAT_TUGAS_IN_HOUSE_TRAINING' ? 'selected':'' %>>Surat Tugas In-House Training</option>
-                </select>
-              </label>
-              <label>
-                Font
-                <select name="font" id="fontSelect">
-                  <option value="calibri"   <%= (defaults.font||'calibri')==='calibri'   ? 'selected':'' %>>Calibri</option>
-                  <option value="arial"     <%= defaults.font==='arial'     ? 'selected':'' %>>Arial</option>
-                  <option value="times"     <%= defaults.font==='times'     ? 'selected':'' %>>Times New Roman</option>
-                  <option value="georgia"   <%= defaults.font==='georgia'   ? 'selected':'' %>>Georgia</option>
-                  <option value="tahoma"    <%= defaults.font==='tahoma'    ? 'selected':'' %>>Tahoma</option>
-                  <option value="verdana"   <%= defaults.font==='verdana'   ? 'selected':'' %>>Verdana</option>
-                  <option value="trebuchet" <%= defaults.font==='trebuchet' ? 'selected':'' %>>Trebuchet MS</option>
-                  <option value="garamond"  <%= defaults.font==='garamond'  ? 'selected':'' %>>Garamond</option>
-                  <option value="courier"   <%= defaults.font==='courier'   ? 'selected':'' %>>Courier New</option>
-                  <option value="system"    <%= defaults.font==='system'    ? 'selected':'' %>>System UI</option>
-                </select>
-              </label>
-              <label>
-                Font Custom (opsional)
-                <input name="fontCustom" id="fontCustom" placeholder='Contoh: Cambria, serif' value="<%= defaults.fontCustom||'' %>" />
-              </label>
-              <label>
-                Ukuran Font (pt)
-                <input type="number" name="fontSizePt" min="8" max="24" step="0.5" value="<%= defaults.fontSizePt||12 %>" />
-              </label>
-              <label>
-                Line Spacing
-                <input type="number" name="lineHeight" min="1" max="2.2" step="0.05" value="<%= defaults.lineHeight||1.55 %>" />
-              </label>
-              <label>
-                Spasi Paragraf (pt)
-                <input type="number" name="paragraphSpacingPt" min="0" max="24" step="1" value="<%= defaults.paragraphSpacingPt||0 %>" />
-              </label>
-              <label>
-                Spasi Antar Bagian (pt)
-                <input type="number" name="sectionSpacingPt" min="0" max="48" step="1" value="<%= defaults.sectionSpacingPt||0 %>" />
-              </label>
-            </div>
-          </div>
-
-          <!-- 2. Detail Surat -->
-          <div class="fsec">
-            <p class="fsec-title">2 · Detail Surat</p>
-            <div class="grid" style="gap:12px">
-              <label>
-                Tempat
-                <input name="place" value="<%= defaults.place %>" placeholder="Bandung" />
-              </label>
-              <label>
-                Tanggal
-                <input type="date" name="date" value="<%= defaults.date %>" />
-              </label>
-              <label>
-                Nomor Surat
-                <input name="number" placeholder="001/AILO/III/2026" value="<%= defaults.number %>" />
-              </label>
-              <label>
-                Lampiran
-                <input name="attachment" value="<%= defaults.attachment||'-' %>" />
-              </label>
-              <label class="span-2">
-                Perihal
-                <input name="subject" placeholder="Contoh: Permohonan Data Penelitian" value="<%= defaults.subject %>" />
-              </label>
-            </div>
-          </div>
-
-          <!-- 3. Penerima -->
-          <div class="fsec">
-            <p class="fsec-title">3 · Penerima</p>
-            <div class="grid" style="gap:12px">
-              <label class="span-2">
-                Kepada (Yth.)
-                <input name="recipient" placeholder="Yth. Kepala Bagian ..." value="<%= defaults.recipient %>" />
-              </label>
-              <div class="span-2 field">
-                <span>Alamat Penerima <span class="muted small">(opsional — bisa bold, list, dsb.)</span></span>
-                <div class="quill-wrap quill-wrap--sm">
-                  <div id="recipientEditor"></div>
+          <!-- ① Jenis & Tampilan -->
+          <div class="form-card">
+            <div class="form-section">
+              <div class="section-header">
+                <div class="section-num">1</div>
+                <div class="section-title">Jenis &amp; Tampilan</div>
+              </div>
+              <div class="field-grid">
+                <div class="f-label full">
+                  <span>Jenis Surat</span>
+                  <select name="template" id="templateSelect">
+                    <option value="DEFAULT"                       <%= (defaults.template||'DEFAULT')==='DEFAULT'                       ? 'selected':'' %>>Surat Umum (Default)</option>
+                    <option value="SURAT_TUGAS"                   <%= defaults.template==='SURAT_TUGAS'                   ? 'selected':'' %>>Surat Tugas</option>
+                    <option value="SURAT_TUGAS_PANDUAN"           <%= defaults.template==='SURAT_TUGAS_PANDUAN'           ? 'selected':'' %>>Surat Tugas Panduan</option>
+                    <option value="SURAT_TUGAS_TENAGA_AHLI"       <%= defaults.template==='SURAT_TUGAS_TENAGA_AHLI'       ? 'selected':'' %>>Surat Tugas Tenaga Ahli</option>
+                    <option value="SURAT_TUGAS_UNDANGAN"          <%= defaults.template==='SURAT_TUGAS_UNDANGAN'          ? 'selected':'' %>>Surat Tugas Undangan</option>
+                    <option value="SURAT_TUGAS_IN_HOUSE_TRAINING" <%= defaults.template==='SURAT_TUGAS_IN_HOUSE_TRAINING' ? 'selected':'' %>>Surat Tugas In-House Training</option>
+                  </select>
                 </div>
-                <textarea class="hidden-field" name="recipientAddress"     id="recipientAddress"><%= defaults.recipientAddress %></textarea>
-                <textarea class="hidden-field" name="recipientAddressHtml" id="recipientAddressHtml"><%= defaults.recipientAddressHtml||'' %></textarea>
+                <div class="f-label">
+                  <span>Font</span>
+                  <select name="font" id="fontSelect">
+                    <option value="calibri"   <%= (defaults.font||'calibri')==='calibri'   ? 'selected':'' %>>Calibri</option>
+                    <option value="arial"     <%= defaults.font==='arial'     ? 'selected':'' %>>Arial</option>
+                    <option value="times"     <%= defaults.font==='times'     ? 'selected':'' %>>Times New Roman</option>
+                    <option value="georgia"   <%= defaults.font==='georgia'   ? 'selected':'' %>>Georgia</option>
+                    <option value="tahoma"    <%= defaults.font==='tahoma'    ? 'selected':'' %>>Tahoma</option>
+                    <option value="verdana"   <%= defaults.font==='verdana'   ? 'selected':'' %>>Verdana</option>
+                    <option value="trebuchet" <%= defaults.font==='trebuchet' ? 'selected':'' %>>Trebuchet MS</option>
+                    <option value="garamond"  <%= defaults.font==='garamond'  ? 'selected':'' %>>Garamond</option>
+                    <option value="courier"   <%= defaults.font==='courier'   ? 'selected':'' %>>Courier New</option>
+                    <option value="system"    <%= defaults.font==='system'    ? 'selected':'' %>>System UI</option>
+                  </select>
+                </div>
+                <div class="f-label">
+                  <span>Font Custom <span style="font-weight:400;text-transform:none;letter-spacing:0">(opsional)</span></span>
+                  <input name="fontCustom" id="fontCustom" placeholder="Contoh: Cambria, serif" value="<%= defaults.fontCustom||'' %>" />
+                </div>
+                <div class="f-label">
+                  <span>Ukuran Font (pt)</span>
+                  <input type="number" name="fontSizePt" min="8" max="24" step="0.5" value="<%= defaults.fontSizePt||12 %>" />
+                </div>
+                <div class="f-label">
+                  <span>Line Spacing</span>
+                  <input type="number" name="lineHeight" min="1" max="2.2" step="0.05" value="<%= defaults.lineHeight||1.55 %>" />
+                </div>
+                <div class="f-label">
+                  <span>Spasi Paragraf (pt)</span>
+                  <input type="number" name="paragraphSpacingPt" min="0" max="24" step="1" value="<%= defaults.paragraphSpacingPt||0 %>" />
+                </div>
+                <div class="f-label">
+                  <span>Spasi Antar Bagian (pt)</span>
+                  <input type="number" name="sectionSpacingPt" min="0" max="48" step="1" value="<%= defaults.sectionSpacingPt||0 %>" />
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- 4. Isi Surat -->
-          <div class="fsec">
-            <p class="fsec-title">4 · Isi Surat</p>
-            <div class="field">
+          <!-- ② Detail Surat -->
+          <div class="form-card">
+            <div class="form-section">
+              <div class="section-header">
+                <div class="section-num">2</div>
+                <div class="section-title">Detail Surat</div>
+              </div>
+              <div class="field-grid">
+                <div class="f-label">
+                  <span>Tempat</span>
+                  <input name="place" value="<%= defaults.place %>" placeholder="Bandung" />
+                </div>
+                <div class="f-label">
+                  <span>Tanggal</span>
+                  <input type="date" name="date" value="<%= defaults.date %>" />
+                </div>
+                <div class="f-label">
+                  <span>Nomor Surat</span>
+                  <input name="number" placeholder="001/AILO/III/2026" value="<%= defaults.number %>" />
+                </div>
+                <div class="f-label">
+                  <span>Lampiran</span>
+                  <input name="attachment" value="<%= defaults.attachment||'-' %>" />
+                </div>
+                <div class="f-label full">
+                  <span>Perihal</span>
+                  <input name="subject" placeholder="Contoh: Permohonan Data Penelitian" value="<%= defaults.subject %>" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ③ Penerima -->
+          <div class="form-card">
+            <div class="form-section">
+              <div class="section-header">
+                <div class="section-num">3</div>
+                <div class="section-title">Penerima</div>
+              </div>
+              <div class="field-grid">
+                <div class="f-label full">
+                  <span>Kepada (Yth.)</span>
+                  <input name="recipient" placeholder="Yth. Kepala Bagian ..." value="<%= defaults.recipient %>" />
+                </div>
+                <div class="f-label full">
+                  <span>Alamat Penerima <span style="font-weight:400;text-transform:none;letter-spacing:0">(opsional — bisa bold, list, dsb.)</span></span>
+                  <div class="quill-wrap quill-wrap--sm">
+                    <div id="recipientEditor"></div>
+                  </div>
+                  <textarea class="hidden-field" name="recipientAddress"     id="recipientAddress"><%= defaults.recipientAddress %></textarea>
+                  <textarea class="hidden-field" name="recipientAddressHtml" id="recipientAddressHtml"><%= defaults.recipientAddressHtml||'' %></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ④ Isi Surat -->
+          <div class="form-card">
+            <div class="form-section">
+              <div class="section-header">
+                <div class="section-num">4</div>
+                <div class="section-title">Isi Surat</div>
+              </div>
               <div class="quill-wrap quill-wrap--lg">
                 <div id="bodyEditor"></div>
               </div>
@@ -220,50 +338,60 @@
             </div>
           </div>
 
-          <!-- 5. Penandatangan -->
-          <div class="fsec">
-            <p class="fsec-title">5 · Penandatangan</p>
-            <div class="grid" style="gap:12px">
-              <label class="span-2">
-                Kalimat Penutup
-                <input name="closing" value="<%= defaults.closing||'Hormat kami,' %>" placeholder="Hormat kami," />
-              </label>
-              <label>
-                Nama Penandatangan
-                <input name="signatoryName" value="<%= defaults.signatoryName %>" placeholder="Dr. Nama Lengkap, M.T." />
-              </label>
-              <label>
-                Jabatan
-                <input name="signatoryTitle" value="<%= defaults.signatoryTitle %>" placeholder="Kepala Laboratorium" />
-              </label>
+          <!-- ⑤ Penandatangan -->
+          <div class="form-card">
+            <div class="form-section">
+              <div class="section-header">
+                <div class="section-num">5</div>
+                <div class="section-title">Penandatangan</div>
+              </div>
+              <div class="field-grid">
+                <div class="f-label full">
+                  <span>Kalimat Penutup</span>
+                  <input name="closing" value="<%= defaults.closing||'Hormat kami,' %>" placeholder="Hormat kami," />
+                </div>
+                <div class="f-label">
+                  <span>Nama Penandatangan</span>
+                  <input name="signatoryName" value="<%= defaults.signatoryName %>" placeholder="Dr. Nama Lengkap, M.T." />
+                </div>
+                <div class="f-label">
+                  <span>Jabatan</span>
+                  <input name="signatoryTitle" value="<%= defaults.signatoryTitle %>" placeholder="Kepala Laboratorium" />
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- 6. Extras Surat Tugas (conditional) -->
+          <!-- ⑥ Data Surat Tugas (conditional) -->
           <div id="taskExtras" style="display:none">
-            <div class="fsec">
-              <p class="fsec-title">6 · Data Surat Tugas</p>
-              <div class="grid" style="gap:12px">
-                <label>
-                  NIP Penandatangan (opsional)
-                  <input name="signatoryNip" value="<%= defaults.signatoryNip||'' %>" placeholder="NIP. 123456789" />
-                </label>
-                <label class="span-2">
-                  Detail Acara <span class="muted small">(format: Kunci: Nilai, satu per baris)</span>
-                  <textarea name="detailsRaw" rows="5" placeholder="Hari, tanggal: Kamis, 8 Mei 2026&#10;Waktu: 09.00 WIB s.d selesai&#10;Tempat: Ruang Rapat ...&#10;Acara: Focus Group Discussion"><%= defaults.detailsRaw||'' %></textarea>
-                </label>
-                <div class="span-2 field">
-                  <span>Data Peserta / Tabel <span class="muted small" id="tableHint"></span></span>
-                  <div class="paper" style="padding:12px; border-radius:12px">
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap">
-                      <span class="muted small">Klik <strong>+ Baris</strong> untuk menambah peserta.</span>
-                      <button class="btn ghost" type="button" id="addRowBtn" style="height:38px; padding:0 14px; min-width:auto">+ Baris</button>
-                    </div>
-                    <div style="overflow:auto">
-                      <table style="width:100%; border-collapse:collapse" id="tableEditor">
-                        <thead id="tableHead"></thead>
-                        <tbody id="tableBody"></tbody>
-                      </table>
+            <div class="form-card">
+              <div class="form-section">
+                <div class="section-header">
+                  <div class="section-num">6</div>
+                  <div class="section-title">Data Surat Tugas</div>
+                </div>
+                <div class="field-grid">
+                  <div class="f-label">
+                    <span>NIP Penandatangan <span style="font-weight:400;text-transform:none;letter-spacing:0">(opsional)</span></span>
+                    <input name="signatoryNip" value="<%= defaults.signatoryNip||'' %>" placeholder="NIP. 123456789" />
+                  </div>
+                  <div class="f-label full">
+                    <span>Detail Acara <span style="font-weight:400;text-transform:none;letter-spacing:0">(Kunci: Nilai, satu per baris)</span></span>
+                    <textarea name="detailsRaw" rows="5" placeholder="Hari, tanggal: Kamis, 8 Mei 2026&#10;Waktu: 09.00 WIB s.d selesai&#10;Tempat: Ruang Rapat ...&#10;Acara: Focus Group Discussion"><%= defaults.detailsRaw||'' %></textarea>
+                  </div>
+                  <div class="f-label full">
+                    <span>Data Peserta / Tabel <span id="tableHint" style="font-weight:400;text-transform:none;letter-spacing:0"></span></span>
+                    <div class="table-wrap">
+                      <div class="table-toolbar">
+                        <span>Klik <strong>+ Baris</strong> untuk menambah peserta</span>
+                        <button class="btn ghost" type="button" id="addRowBtn" style="height:34px; padding:0 14px; font-size:13px">+ Baris</button>
+                      </div>
+                      <div style="overflow:auto">
+                        <table id="tableEditor">
+                          <thead id="tableHead"></thead>
+                          <tbody id="tableBody"></tbody>
+                        </table>
+                      </div>
                     </div>
                     <textarea class="hidden-field" name="tableRowsRaw" id="tableRowsRaw"><%= defaults.tableRowsRaw||'' %></textarea>
                   </div>
@@ -272,9 +400,12 @@
             </div>
           </div>
 
+          <!-- Submit -->
           <div class="submit-bar">
-            <button type="submit" class="btn">Preview Surat →</button>
+            <span class="hint">Pastikan semua data sudah benar sebelum preview.</span>
+            <button type="submit" class="btn">Preview Surat &rarr;</button>
           </div>
+
         </form>
       </main>
     </div>
@@ -282,7 +413,6 @@
     <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
     <script>
     (function () {
-      /* ── Quill toolbar configs ── */
       var TB_FULL = [
         [{ header: [1, 2, 3, false] }],
         ['bold', 'italic', 'underline', 'strike'],
@@ -312,13 +442,11 @@
         modules: { toolbar: TB_SIMPLE }
       });
 
-      /* ── Set initial HTML values ── */
       var initBody      = <%- JSON.stringify(defaults.bodyHtml      || '') %>;
       var initRecipient = <%- JSON.stringify(defaults.recipientAddressHtml || '') %>;
       if (initBody)      bodyQuill.root.innerHTML      = initBody;
       if (initRecipient) recipientQuill.root.innerHTML = initRecipient;
 
-      /* ── Sync Quill → hidden textareas ── */
       function syncAll() {
         document.getElementById('bodyHtml').value             = bodyQuill.root.innerHTML;
         document.getElementById('body').value                 = bodyQuill.getText().trim();
@@ -326,11 +454,9 @@
         document.getElementById('recipientAddress').value     = recipientQuill.getText().trim();
       }
 
-      document.getElementById('letterForm').addEventListener('submit', function () {
-        syncAll();
-      });
+      document.getElementById('letterForm').addEventListener('submit', function () { syncAll(); });
 
-      /* ── Font preview ── */
+      /* Font preview */
       var fontStacks = {
         calibri:   'Calibri, "Segoe UI", Arial, sans-serif',
         arial:     'Arial, Helvetica, sans-serif',
@@ -343,8 +469,8 @@
         courier:   '"Courier New", Courier, monospace',
         system:    'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
       };
-      var fontSelect  = document.getElementById('fontSelect');
-      var fontCustom  = document.getElementById('fontCustom');
+      var fontSelect = document.getElementById('fontSelect');
+      var fontCustom = document.getElementById('fontCustom');
       function applyFont() {
         var stack = (fontCustom && fontCustom.value.trim()) || fontStacks[fontSelect.value] || fontStacks.calibri;
         document.documentElement.style.setProperty('--uiFont', stack);
@@ -353,7 +479,7 @@
       if (fontCustom) fontCustom.addEventListener('input', applyFont);
       applyFont();
 
-      /* ── Template switcher (show/hide Surat Tugas extras) ── */
+      /* Template switcher */
       var templateSelect = document.getElementById('templateSelect');
       var taskExtras     = document.getElementById('taskExtras');
 
@@ -380,61 +506,63 @@
         var cols = columnsForTemplate(t);
         if (hint) hint.textContent = '— kolom: ' + cols.join(', ');
 
-        /* header */
-        var ths = '<th style="width:44px;text-align:center;padding:6px 8px;border-bottom:1px solid var(--line)">No</th>';
-        cols.forEach(function(c){ ths += '<th style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)">' + esc(c) + '</th>'; });
-        ths += '<th style="width:80px;padding:6px 8px;border-bottom:1px solid var(--line)"></th>';
+        var ths = '<th style="width:44px;text-align:center">No</th>';
+        cols.forEach(function(c) { ths += '<th>' + esc(c) + '</th>'; });
+        ths += '<th style="width:80px"></th>';
         head.innerHTML = '<tr>' + ths + '</tr>';
 
         function serialize() {
           var lines = [];
-          Array.prototype.forEach.call(body.querySelectorAll('tr'), function(tr){
+          Array.prototype.forEach.call(body.querySelectorAll('tr'), function(tr) {
             var parts = [];
-            Array.prototype.forEach.call(tr.querySelectorAll('input[data-col]'), function(inp){
+            Array.prototype.forEach.call(tr.querySelectorAll('input[data-col]'), function(inp) {
               parts.push(inp.value.trim());
             });
-            if (parts.some(function(p){ return p; })) lines.push(parts.join('|'));
+            if (parts.some(function(p) { return p; })) lines.push(parts.join('|'));
           });
           raw.value = lines.join('\n');
         }
 
         function renumber() {
-          Array.prototype.forEach.call(body.querySelectorAll('[data-no]'), function(el, i){ el.textContent = i+1; });
+          Array.prototype.forEach.call(body.querySelectorAll('[data-no]'), function(el, i) {
+            el.textContent = i + 1;
+          });
         }
 
         function addRow(vals) {
           vals = Array.isArray(vals) ? vals : [];
-          var tds = '<td data-no style="text-align:center;padding:6px 8px;border-bottom:1px solid var(--line)"></td>';
-          cols.forEach(function(c, i){
-            tds += '<td style="padding:4px 6px;border-bottom:1px solid var(--line)">'
-              + '<input data-col="' + esc(c) + '" value="' + esc(vals[i]||'') + '" style="border-radius:8px;padding:6px 10px" />'
+          var tds = '<td data-no style="text-align:center;padding:6px 8px;color:var(--muted);font-size:13px"></td>';
+          cols.forEach(function(c, i) {
+            tds += '<td style="padding:4px 6px">'
+              + '<input data-col="' + esc(c) + '" value="' + esc(vals[i]||'') + '" />'
               + '</td>';
           });
-          tds += '<td style="padding:4px 6px;border-bottom:1px solid var(--line)">'
-            + '<button class="btn ghost" type="button" data-del style="height:34px;padding:0 10px;min-width:auto;font-size:13px">Hapus</button>'
+          tds += '<td style="padding:4px 8px">'
+            + '<button class="btn ghost" type="button" data-del style="height:30px;padding:0 10px;font-size:12px">Hapus</button>'
             + '</td>';
           var tr = document.createElement('tr');
           tr.innerHTML = tds;
           tr.addEventListener('input', serialize);
-          tr.querySelector('[data-del]').addEventListener('click', function(){ tr.remove(); renumber(); serialize(); });
+          tr.querySelector('[data-del]').addEventListener('click', function() {
+            tr.remove(); renumber(); serialize();
+          });
           body.appendChild(tr);
           renumber();
           serialize();
         }
 
-        /* parse existing raw data */
         body.innerHTML = '';
         var existing = String(raw.value||'').trim();
         if (existing) {
-          existing.split(/\r?\n/).forEach(function(line){
-            var parts = line.split('|').map(function(p){ return p.trim(); });
+          existing.split(/\r?\n/).forEach(function(line) {
+            var parts = line.split('|').map(function(p) { return p.trim(); });
             if (parts.some(Boolean)) addRow(parts.slice(0, cols.length));
           });
         } else {
           addRow([]);
         }
 
-        addBtn.onclick = function(){ addRow([]); };
+        addBtn.onclick = function() { addRow([]); };
       }
 
       function applyTemplate() {
