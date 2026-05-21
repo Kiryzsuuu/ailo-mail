@@ -99,7 +99,11 @@ async function renderLetterHtml({ kop, letter, withChrome, embed }) {
   // In embed mode, we avoid returning a full HTML document. This makes it safe to inject into
   // an existing page (e.g., views/preview.ejs) without the browser dropping <html>/<head>/<body>.
   if (isEmbed) {
-    return `<style>\n${css}\n</style>\n${rendered}`;
+    const stationeryUrl = kop && String(kop.stationeryDataUrl || '').trim();
+    const stationeryCss = stationeryUrl
+      ? `<style>@media screen{.letter{background-image:url("${stationeryUrl}") !important;background-repeat:no-repeat !important;background-size:100% 100% !important;}.kop{display:none !important;}.telkom-footer{display:none !important;}}</style>\n`
+      : '';
+    return `<style>\n${css}\n</style>\n${stationeryCss}${rendered}`;
   }
 
   return rendered;

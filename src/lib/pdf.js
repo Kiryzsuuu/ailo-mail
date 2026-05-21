@@ -127,7 +127,8 @@ async function generatePdfBuffer(html, options = {}) {
           '.kop{display:none !important;}',
           '.telkom-footer{display:none !important;}',
           // Follow the uploaded template; only enforce 1.25cm safe padding top/bottom.
-          '.letter{padding:12.5mm 16mm 12.5mm 16mm !important;}',
+          // background:transparent so the body stationery image shows through the letter div.
+          '.letter{background:transparent !important; padding:12.5mm 16mm 12.5mm 16mm !important;}',
         ].join('\n'),
       });
     }
