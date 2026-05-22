@@ -25,21 +25,82 @@ html, body {
 }
 
 @media screen {
+  /* Use flex column so footer is pushed to A4 bottom for short letters
+     and follows content naturally for longer ones. */
   .letter {
     width: 210mm;
-    height: 297mm;
+    min-height: 297mm;
+    height: auto;
     margin: 10mm auto;
     background: #fff;
     box-shadow: 0 0 15px rgba(0,0,0,0.18);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header is a static flex item — takes its natural height (min 40mm) */
+  .letter-header {
+    position: static;
+    flex-shrink: 0;
+    min-height: var(--headerHeight);
+    height: auto;
+    /* padding/text-align from base rules still apply */
+  }
+
+  /* Main content grows to fill remaining A4 space; no overflow clipping */
+  .letter-main {
+    position: static;
+    top: auto;
+    bottom: auto;
+    left: auto;
+    flex: 1;
+    overflow: visible;
+  }
+
+  /* Footer pushed to the visual bottom of the A4 box */
+  .telkom-footer {
+    position: static;
+    flex-shrink: 0;
+    bottom: auto;
+    left: auto;
+    width: 100%;
   }
 }
 
 @media print {
   .letter {
-    width: auto;
+    display: flex;
+    flex-direction: column;
+    width: 210mm;
+    min-height: 297mm;
     height: auto;
     margin: 0;
     box-shadow: none;
+    overflow: visible;
+  }
+
+  .letter-header {
+    position: static;
+    flex-shrink: 0;
+    height: auto;
+    min-height: var(--headerHeight);
+  }
+
+  .letter-main {
+    position: static;
+    top: auto;
+    bottom: auto;
+    left: auto;
+    flex: 1;
+    overflow: visible;
+  }
+
+  .telkom-footer {
+    position: static;
+    flex-shrink: 0;
+    bottom: auto;
+    left: auto;
+    width: 100%;
   }
 }
 
@@ -70,11 +131,44 @@ html, body {
   height: auto;
 }
 
+/* Surat tugas header */
+.doc-title {
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  margin-top: 8px;
+  margin-bottom: 2px;
+  text-decoration: underline;
+}
+
+.doc-number {
+  text-align: center;
+  margin: 0 0 14px;
+  font-size: 12.5pt;
+}
+
+.st-meta {
+  margin: 10px 0;
+}
+
+.kv {
+  border-collapse: collapse;
+}
+
+.kv td {
+  padding: 2px 0;
+  vertical-align: top;
+}
+
+.kv .k { width: 90px; }
+.kv .sep { width: 14px; text-align: center; }
+
 /* Surat tugas tables (keep borders consistent) */
 .st-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: auto;
+  margin: 10px 0 12px;
 }
 
 .st-table th,

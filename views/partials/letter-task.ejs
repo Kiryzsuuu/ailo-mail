@@ -25,55 +25,7 @@
       }
       <% } %>
 
-      .doc-title {
-        text-align: center;
-        font-weight: 800;
-        letter-spacing: 0.4px;
-        margin-top: 8px;
-        margin-bottom: 2px;
-        text-decoration: underline;
-      }
-      .doc-number {
-        text-align: center;
-        margin: 0 0 14px;
-        font-size: 12.5pt;
-      }
-
-      .st-meta {
-        margin: 10px 0 10px;
-      }
-      .kv {
-        border-collapse: collapse;
-      }
-      .kv td {
-        padding: 2px 0;
-        vertical-align: top;
-      }
-      .kv .k { width: 90px; }
-      .kv .sep { width: 14px; text-align: center; }
-
-      .st-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 10px 0 12px;
-        font-size: 12pt;
-      }
-
-
-      .footer {
-        margin-top: 14px;
-        font-size: 9.5pt;
-        color: #111;
-      }
-      .footer-line {
-        border-top: 1px solid rgba(17,17,17,0.45);
-        margin-top: 16px;
-        padding-top: 8px;
-      }
-
-      .sign {
-        width: 42%;
-      }
+      .st-table { font-size: 12pt; }
     </style>
   </head>
   <body>
@@ -148,16 +100,11 @@
           <div style="margin-top:14px"><%- letter.closingParagraphHtml %></div>
         <% } %>
 
-        <%
-          var _tpl = String(letter.template || '').toUpperCase();
-          var _signRight = (_tpl === 'SURAT_TUGAS_PANDUAN' || _tpl === 'SURAT_TUGAS_TENAGA_AHLI');
-          var _signStyle = 'margin-top:20px' + (_signRight ? ';margin-left:auto' : '');
-        %>
-        <div class="sign" style="<%= _signStyle %>">
+        <div class="sign" style="margin-top:20px">
           <% if (letter.closingHtml) { %>
             <div style="margin-bottom:4px"><%- letter.closingHtml %></div>
           <% } %>
-          <% if (_signRight && letter.place) { %>
+          <% if (letter.place) { %>
             <div><%= letter.place %>,</div>
           <% } %>
           <div class="sign-space"></div>

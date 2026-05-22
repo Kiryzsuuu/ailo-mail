@@ -113,12 +113,14 @@ function buildPrintOverrideCss(options) {
     ].join('\n');
   }
 
-  // Basic mode: keep kop/footer in-document, just unblock the collapsed absolute layout.
+  // Basic mode: flex layout matching the @media screen preview so barcodes anchor correctly.
   return [
-    '.letter{position:static !important;overflow:visible !important;height:auto !important;}',
-    '.letter-header{position:static !important;height:auto !important;padding-top:var(--headerPadTop) !important;}',
-    '.letter-main{position:static !important;top:auto !important;bottom:auto !important;overflow:visible !important;}',
-    '.telkom-footer{position:static !important;}',
+    '@page{size:A4;margin:0;}',
+    'html,body{margin:0 !important;padding:0 !important;}',
+    '.letter{display:flex !important;flex-direction:column !important;width:210mm !important;min-height:297mm !important;height:auto !important;margin:0 !important;overflow:visible !important;position:relative !important;}',
+    '.letter-header{position:static !important;flex-shrink:0 !important;height:auto !important;min-height:var(--headerHeight) !important;}',
+    '.letter-main{position:static !important;top:auto !important;bottom:auto !important;left:auto !important;flex:1 !important;overflow:visible !important;}',
+    '.telkom-footer{position:static !important;flex-shrink:0 !important;bottom:auto !important;left:auto !important;width:100% !important;}',
   ].join('\n');
 }
 
@@ -167,10 +169,10 @@ async function generatePdfBuffer(html, options = {}) {
             left: '0mm',
           }
           : {
-            top: '16mm',
-            right: '16mm',
-            bottom: '16mm',
-            left: '16mm',
+            top: '0mm',
+            right: '0mm',
+            bottom: '0mm',
+            left: '0mm',
           }),
     });
 
