@@ -83,7 +83,59 @@ function buildRepeatingFooterTemplate(kop) {
   `;
 }
 
+function buildPrintOverrideCss(options) {
+  const { useStationery, repeatingHeaderFooter, stationeryDataUrl } = options;
+
+  if (useStationery) {
+    return [
+      '@page{size:A4;margin:0 !important;}',
+      'html,body{background:transparent !important;margin:0 !important;padding:0 !important;}',
+      `body{background-image:url("${stationeryDataUrl}") !important;background-repeat:no-repeat !important;background-position:left top !important;background-size:100% 100% !important;}`,
+      '.kop{display:none !important;}',
+      '.telkom-footer{display:none !important;}',
+      '.letter{position:static !important;overflow:visible !important;height:auto !important;width:100% !important;background:transparent !important;padding:0 !important;}',
+      '.letter-header{display:none !important;}',
+      '.letter-main{position:static !important;top:auto !important;bottom:auto !important;left:auto !important;width:100% !important;padding:40mm 25mm 45mm 25mm !important;overflow:visible !important;}',
+    ].join('\n');
+  }
+
+  if (repeatingHeaderFooter) {
+    // Fix the absolute-layout height collapse: @media print sets .letter{height:auto} but
+    // children are position:absolute → container collapses to 0 → blank PDF.
+    return [
+      '@page{margin:0 !important;}',
+      'html,body{margin:0 !important;padding:0 !important;}',
+      '.letter{position:static !important;overflow:visible !important;height:auto !important;width:100% !important;padding:0 !important;}',
+      '.letter-header{display:none !important;}',
+      '.kop{display:none !important;}',
+      '.telkom-footer{display:none !important;}',
+      '.letter-main{position:static !important;top:auto !important;bottom:auto !important;left:auto !important;width:100% !important;padding:0 25mm !important;overflow:visible !important;}',
+    ].join('\n');
+  }
+
+  // Basic mode: keep kop/footer in-document, just unblock the collapsed absolute layout.
+  return [
+    '.letter{position:static !important;overflow:visible !important;height:auto !important;}',
+    '.letter-header{position:static !important;height:auto !important;padding-top:var(--headerPadTop) !important;}',
+    '.letter-main{position:static !important;top:auto !important;bottom:auto !important;overflow:visible !important;}',
+    '.telkom-footer{position:static !important;}',
+  ].join('\n');
+}
+
 async function generatePdfBuffer(html, options = {}) {
+  const repeatingHeaderFooter = Boolean(options.repeatingHeaderFooter);
+  const kop = options.kop || {};
+  const stationeryDataUrl = kop && String(kop.stationeryDataUrl || '').trim();
+  const useStationery = repeatingHeaderFooter && Boolean(stationeryDataUrl);
+  const hasHeaderImage = Boolean(String(kop.headerImageDataUrl || '').trim());
+
+  // Inject CSS overrides directly into the HTML before Puppeteer renders it.
+  // This is more reliable than addStyleTag() which races with Puppeteer's layout.
+  const overrideCss = buildPrintOverrideCss({ useStationery, repeatingHeaderFooter, stationeryDataUrl });
+  const processedHtml = html.includes('</head>')
+    ? html.replace('</head>', `<style>${overrideCss}</style></head>`)
+    : html + `<style>${overrideCss}</style>`;
+
   const browser = await puppeteer.launch({
     headless: 'new',
   });
@@ -91,47 +143,7 @@ async function generatePdfBuffer(html, options = {}) {
   try {
     const page = await browser.newPage();
 
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-
-    const repeatingHeaderFooter = Boolean(options.repeatingHeaderFooter);
-    const kop = options.kop || {};
-    const stationeryDataUrl = kop && String(kop.stationeryDataUrl || '').trim();
-    // If the user provided a full-page stationery template, always prefer it.
-    // This ensures we follow the uploaded artwork exactly (no custom SVG/header/footer).
-    const useStationery = repeatingHeaderFooter && Boolean(stationeryDataUrl);
-    const hasHeaderImage = Boolean(String(kop.headerImageDataUrl || '').trim());
-
-    if (repeatingHeaderFooter && !useStationery) {
-      // Hide in-document kop/footer; they will be supplied by Puppeteer per-page header/footer.
-      await page.addStyleTag({
-        content: [
-          '@page{margin:0 !important;}',
-          'html,body{margin:0 !important; padding:0 !important;}',
-          // Keep letter content aligned like normal (16mm), while header/footer can go edge-to-edge.
-          '.letter{padding-left:16mm !important; padding-right:16mm !important; padding-top:12.5mm !important; padding-bottom:12.5mm !important;}',
-          '.kop{display:none !important;}',
-          '.telkom-footer{display:none !important;}',
-        ].join('\n'),
-      });
-    }
-
-    if (useStationery) {
-      // DOCX stationery mode: full-page background image per page.
-      // This matches the DOCX look (logo + footer wave) exactly.
-      await page.addStyleTag({
-        content: [
-          '@page{size:A4; margin:0 !important;}',
-          'html,body{background:transparent !important; margin:0 !important; padding:0 !important;}',
-          `body{background-image:url("${stationeryDataUrl}") !important; background-repeat:no-repeat !important; background-position:left top !important; background-size:100% 100% !important;}`,
-          // Hide in-document kop/footer because the stationery already contains them.
-          '.kop{display:none !important;}',
-          '.telkom-footer{display:none !important;}',
-          // Follow the uploaded template; only enforce 1.25cm safe padding top/bottom.
-          // background:transparent so the body stationery image shows through the letter div.
-          '.letter{background:transparent !important; padding:12.5mm 16mm 12.5mm 16mm !important;}',
-        ].join('\n'),
-      });
-    }
+    await page.setContent(processedHtml, { waitUntil: 'networkidle0' });
 
     const pdf = await page.pdf({
       format: 'A4',

@@ -103,16 +103,21 @@
             <tr>
               <td class="k">Jabatan</td><td class="sep">:</td><td><%= letter.signatoryTitle || '' %></td>
             </tr>
+            <% if (letter.signatoryInstansi) { %>
+              <tr>
+                <td class="k">Instansi</td><td class="sep">:</td><td><%= letter.signatoryInstansi %></td>
+              </tr>
+            <% } %>
           </table>
         </div>
 
         <% if (letter.tableConfig && Array.isArray(letter.tableConfig.columns) && letter.tableConfig.columns.length && Array.isArray(letter.tableRows) && letter.tableRows.length) { %>
-          <div style="margin-top:4px">Dengan ini memberikan tugas kepada:</div>
+          <% if (letter.tableIntroText) { %><div style="margin-top:4px"><%= letter.tableIntroText %></div><% } %>
           <table class="st-table">
             <thead>
               <tr>
                 <% letter.tableConfig.columns.forEach(function (c) { %>
-                  <th><%= c %></th>
+                  <th<% if (c === 'No') { %> style="width:44px"<% } %>><%= c %></th>
                 <% }) %>
               </tr>
             </thead>
@@ -129,7 +134,7 @@
         <% } %>
 
         <% if (Array.isArray(letter.detailsRows) && letter.detailsRows.length) { %>
-          <div>Yang akan diselenggarakan pada:</div>
+          <% if (letter.detailsIntroText) { %><div><%= letter.detailsIntroText %></div><% } %>
           <table class="kv" style="margin-top:6px">
             <% letter.detailsRows.forEach(function (it) { %>
               <tr>
@@ -139,10 +144,22 @@
           </table>
         <% } %>
 
-        <div style="margin-top:14px"><%= letter.closing || '' %></div>
+        <% if (letter.closingParagraphHtml) { %>
+          <div style="margin-top:14px"><%- letter.closingParagraphHtml %></div>
+        <% } %>
 
-        <div class="sign" style="margin-left:auto">
-          <div style="text-align:left"><%= letter.place %>, <%= letter.formattedDate %></div>
+        <%
+          var _tpl = String(letter.template || '').toUpperCase();
+          var _signRight = (_tpl === 'SURAT_TUGAS_PANDUAN' || _tpl === 'SURAT_TUGAS_TENAGA_AHLI');
+          var _signStyle = 'margin-top:20px' + (_signRight ? ';margin-left:auto' : '');
+        %>
+        <div class="sign" style="<%= _signStyle %>">
+          <% if (letter.closingHtml) { %>
+            <div style="margin-bottom:4px"><%- letter.closingHtml %></div>
+          <% } %>
+          <% if (_signRight && letter.place) { %>
+            <div><%= letter.place %>,</div>
+          <% } %>
           <div class="sign-space"></div>
           <div><strong><%= letter.signatoryName || '' %></strong></div>
           <% if (letter.signatoryNip) { %>

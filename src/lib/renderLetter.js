@@ -61,7 +61,13 @@ function normalizeLetterInput(body) {
     signatoryTitle: clean(body.signatoryTitle),
     signatoryNip: clean(body.signatoryNip),
     tableRowsRaw: clean(body.tableRowsRaw),
+    tableColsRaw: clean(body.tableColsRaw),
     detailsRaw: clean(body.detailsRaw),
+    tableIntroText: clean(body.tableIntroText),
+    detailsIntroText: clean(body.detailsIntroText),
+    closingParagraph: clean(body.closingParagraph),
+    signatoryInstansi: clean(body.signatoryInstansi),
+    barcodeSizePt: Math.max(40, Math.min(200, cleanNum(body.barcodeSizePt, 92))),
   };
 }
 
@@ -75,11 +81,17 @@ async function renderLetterHtml({ kop, letter, withChrome, embed }) {
     : (isEmbed ? 'letter-task.fragment.ejs' : 'letter-task.ejs');
 
   const tableConfig = tableConfigForTemplate(template);
+  if (tableConfig.columns.length > 0) {
+    const customCols = parseCustomCols(letter.tableColsRaw, tableConfig.columns);
+    if (customCols) tableConfig.columns = customCols;
+  }
   const tableRows = parseTableRows(letter.tableRowsRaw, tableConfig.columns);
   const detailsRows = parseKeyValueLines(letter.detailsRaw);
 
   const safeBodyHtml = sanitizeRich(letter.bodyHtml) || textToHtml(letter.body);
   const safeRecipientAddressHtml = sanitizeRich(letter.recipientAddressHtml) || textToHtml(letter.recipientAddress);
+  const safeClosingHtml = textToHtml(letter.closing || '');
+  const safeClosingParagraphHtml = textToHtml(letter.closingParagraph || '');
 
   const rendered = await ejs.renderFile(path.join(viewsDir, 'partials', partialFile), {
     kop,
@@ -87,6 +99,8 @@ async function renderLetterHtml({ kop, letter, withChrome, embed }) {
       ...letter,
       bodyHtml: safeBodyHtml,
       recipientAddressHtml: safeRecipientAddressHtml,
+      closingHtml: safeClosingHtml,
+      closingParagraphHtml: safeClosingParagraphHtml,
       tableConfig,
       tableRows,
       detailsRows,
@@ -148,6 +162,25 @@ function sanitizeRich(html) {
       },
     },
   });
+}
+
+function parseCustomCols(raw, defaultCols) {
+  const text = String(raw || '').trim();
+  if (!text) return null;
+
+  // The browser's column editor excludes the auto-numbered 'No' column that the
+  // backend includes as defaultCols[0]. Strip it before comparing, then restore.
+  const hasAutoNo = defaultCols.length > 0 && defaultCols[0] === 'No';
+  const baseCols = hasAutoNo ? defaultCols.slice(1) : defaultCols;
+
+  const cols = text.split('|').map((s) => s.trim());
+  if (cols.length === 0) return null;
+
+  // Pad/trim to match the non-No columns
+  while (cols.length < baseCols.length) cols.push(baseCols[cols.length]);
+  const custom = cols.slice(0, baseCols.length).map((c, i) => c || baseCols[i]);
+
+  return hasAutoNo ? ['No', ...custom] : custom;
 }
 
 function tableConfigForTemplate(template) {

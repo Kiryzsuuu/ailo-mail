@@ -65,7 +65,7 @@
         </div>
 
         <div class="sign">
-          <div class="closing"><%= letter.closing || '' %></div>
+          <div class="closing"><%- letter.closingHtml || '' %></div>
           <div class="sign-space"></div>
           <div class="sign-name"><strong><%= letter.signatoryName || '' %></strong></div>
           <div class="sign-title"><%= letter.signatoryTitle || '' %></div>

@@ -705,7 +705,13 @@ app.get('/mailer', requireAuth, async (req, res, next) => {
         signatoryTitle: '',
         signatoryNip: '',
         tableRowsRaw: '',
+        tableColsRaw: '',
         detailsRaw: '',
+        tableIntroText: 'Dengan ini memberikan tugas kepada:',
+        detailsIntroText: 'Yang akan diselenggarakan pada:',
+        closingParagraph: 'Demikian kami sampaikan penugasan ini agar dapat digunakan sebagaimana mestinya.',
+        signatoryInstansi: '',
+        barcodeSizePt: 92,
       },
     });
   } catch (error) {

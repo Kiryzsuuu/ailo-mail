@@ -11,3 +11,8 @@ yarn-error.log*
 # Runtime / generated
 logs/
 public/examples/
+
+# Local PDF outputs (do not commit)
+Surat Penugasan Fungsional CoE AILO 2026.pdf
+Surat Tugas_Mahasiswa AILO JKT.pdf
+SuratTugas_Indra Aulia_140426.pdf

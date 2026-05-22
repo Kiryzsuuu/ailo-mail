@@ -44,8 +44,9 @@ function verifyToken(token, secret) {
 async function qrDataUrl(text) {
   return qrcode.toDataURL(String(text || ''), {
     errorCorrectionLevel: 'M',
-    margin: 1,
-    scale: 6,
+    margin: 2,
+    scale: 10,
+    color: { dark: '#000000', light: '#ffffff' },
   });
 }
 

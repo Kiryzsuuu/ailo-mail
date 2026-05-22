@@ -89,7 +89,12 @@ const letterSchema = new mongoose.Schema(
 
     // Template-specific extra fields (stored as text; parsed at render time)
     tableRowsRaw: { type: String, default: '' },
+    tableColsRaw: { type: String, default: '' },
     detailsRaw: { type: String, default: '' },
+    tableIntroText: { type: String, default: '' },
+    detailsIntroText: { type: String, default: '' },
+    closingParagraph: { type: String, default: '' },
+    signatoryInstansi: { type: String, default: '' },
 
     // Workflow timestamps
     submittedAt: { type: Date },

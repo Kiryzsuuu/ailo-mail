@@ -347,8 +347,8 @@
               </div>
               <div class="field-grid">
                 <div class="f-label full">
-                  <span>Kalimat Penutup</span>
-                  <input name="closing" value="<%= defaults.closing||'Hormat kami,' %>" placeholder="Hormat kami," />
+                  <span>Salam / Hormat <span style="font-weight:400;text-transform:none;letter-spacing:0">(misal: Hormat kami,)</span></span>
+                  <textarea name="closing" rows="3" placeholder="Hormat kami,"><%= defaults.closing||'Hormat kami,' %></textarea>
                 </div>
                 <div class="f-label">
                   <span>Nama Penandatangan</span>
@@ -357,6 +357,10 @@
                 <div class="f-label">
                   <span>Jabatan</span>
                   <input name="signatoryTitle" value="<%= defaults.signatoryTitle %>" placeholder="Kepala Laboratorium" />
+                </div>
+                <div class="f-label">
+                  <span>Ukuran Barcode (pt) <span style="font-weight:400;text-transform:none;letter-spacing:0">(opsional, default 92)</span></span>
+                  <input type="number" name="barcodeSizePt" min="40" max="200" step="4" value="<%= defaults.barcodeSizePt||92 %>" />
                 </div>
               </div>
             </div>
@@ -375,12 +379,28 @@
                     <span>NIP Penandatangan <span style="font-weight:400;text-transform:none;letter-spacing:0">(opsional)</span></span>
                     <input name="signatoryNip" value="<%= defaults.signatoryNip||'' %>" placeholder="NIP. 123456789" />
                   </div>
+                  <div class="f-label">
+                    <span>Instansi <span style="font-weight:400;text-transform:none;letter-spacing:0">(opsional)</span></span>
+                    <input name="signatoryInstansi" value="<%= defaults.signatoryInstansi||'' %>" placeholder="Universitas Telkom" />
+                  </div>
+                  <div class="f-label full">
+                    <span>Paragraf penutup <span style="font-weight:400;text-transform:none;letter-spacing:0">(misal: Demikian kami sampaikan...)</span></span>
+                    <textarea name="closingParagraph" rows="3" placeholder="Demikian kami sampaikan penugasan ini agar dapat digunakan sebagaimana mestinya."><%= defaults.closingParagraph||'' %></textarea>
+                  </div>
+                  <div class="f-label full">
+                    <span>Teks sebelum tabel peserta</span>
+                    <input name="tableIntroText" value="<%= defaults.tableIntroText||'Dengan ini memberikan tugas kepada:' %>" placeholder="Dengan ini memberikan tugas kepada:" />
+                  </div>
+                  <div class="f-label full">
+                    <span>Teks sebelum detail acara <span style="font-weight:400;text-transform:none;letter-spacing:0">(kosongkan jika tidak ada detail)</span></span>
+                    <input name="detailsIntroText" value="<%= defaults.detailsIntroText||'Yang akan diselenggarakan pada:' %>" placeholder="Yang akan diselenggarakan pada:" />
+                  </div>
                   <div class="f-label full">
                     <span>Detail Acara <span style="font-weight:400;text-transform:none;letter-spacing:0">(Kunci: Nilai, satu per baris)</span></span>
                     <textarea name="detailsRaw" rows="5" placeholder="Hari, tanggal: Kamis, 8 Mei 2026&#10;Waktu: 09.00 WIB s.d selesai&#10;Tempat: Ruang Rapat ...&#10;Acara: Focus Group Discussion"><%= defaults.detailsRaw||'' %></textarea>
                   </div>
                   <div class="f-label full">
-                    <span>Data Peserta / Tabel <span id="tableHint" style="font-weight:400;text-transform:none;letter-spacing:0"></span></span>
+                    <span>Data Peserta / Tabel <span id="tableHint" style="font-weight:400;text-transform:none;letter-spacing:0"></span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px">(nama kolom bisa diedit langsung)</span></span>
                     <div class="table-wrap">
                       <div class="table-toolbar">
                         <span>Klik <strong>+ Baris</strong> untuk menambah peserta</span>
@@ -394,6 +414,7 @@
                       </div>
                     </div>
                     <textarea class="hidden-field" name="tableRowsRaw" id="tableRowsRaw"><%= defaults.tableRowsRaw||'' %></textarea>
+                    <input class="hidden-field" type="text" name="tableColsRaw" id="tableColsRaw" value="<%= defaults.tableColsRaw||'' %>" />
                   </div>
                 </div>
               </div>
@@ -496,26 +517,55 @@
       }
 
       function buildTable(t) {
-        var head   = document.getElementById('tableHead');
-        var body   = document.getElementById('tableBody');
-        var raw    = document.getElementById('tableRowsRaw');
-        var addBtn = document.getElementById('addRowBtn');
-        var hint   = document.getElementById('tableHint');
+        var head      = document.getElementById('tableHead');
+        var body      = document.getElementById('tableBody');
+        var raw       = document.getElementById('tableRowsRaw');
+        var colsHidden = document.getElementById('tableColsRaw');
+        var addBtn    = document.getElementById('addRowBtn');
+        var hint      = document.getElementById('tableHint');
         if (!head || !body || !raw || !addBtn) return;
 
         var cols = columnsForTemplate(t);
-        if (hint) hint.textContent = '— kolom: ' + cols.join(', ');
 
-        var ths = '<th style="width:44px;text-align:center">No</th>';
-        cols.forEach(function(c) { ths += '<th>' + esc(c) + '</th>'; });
-        ths += '<th style="width:80px"></th>';
-        head.innerHTML = '<tr>' + ths + '</tr>';
+        function serializeCols() {
+          var names = [];
+          Array.prototype.forEach.call(head.querySelectorAll('.col-hdr-inp'), function(inp) {
+            names.push(inp.value.trim() || inp.getAttribute('data-default') || '');
+          });
+          cols = names;
+          if (hint) hint.textContent = '— kolom: ' + cols.join(', ');
+          if (colsHidden) colsHidden.value = cols.join('|');
+        }
+
+        function buildHeaders() {
+          var ths = '<th style="width:44px;text-align:center">No</th>';
+          cols.forEach(function(c) {
+            ths += '<th style="padding:4px 6px">'
+              + '<input class="col-hdr-inp" data-default="' + esc(c) + '" value="' + esc(c) + '" '
+              + 'title="Klik untuk mengedit nama kolom" '
+              + 'style="border:none;background:transparent;font-size:12px;font-weight:700;text-transform:uppercase;'
+              + 'letter-spacing:0.4px;color:var(--muted);width:100%;min-width:60px;padding:2px 4px;'
+              + 'border-radius:4px;cursor:text;outline:none;" '
+              + 'onfocus="this.style.background=\'rgba(11,122,141,0.06)\';this.style.color=\'var(--primary)\'" '
+              + 'onblur="this.style.background=\'transparent\';this.style.color=\'var(--muted)\'" />'
+              + '</th>';
+          });
+          ths += '<th style="width:80px"></th>';
+          head.innerHTML = '<tr>' + ths + '</tr>';
+          Array.prototype.forEach.call(head.querySelectorAll('.col-hdr-inp'), function(inp) {
+            inp.addEventListener('input', serializeCols);
+          });
+          if (hint) hint.textContent = '— kolom: ' + cols.join(', ');
+          if (colsHidden) colsHidden.value = cols.join('|');
+        }
+
+        buildHeaders();
 
         function serialize() {
           var lines = [];
           Array.prototype.forEach.call(body.querySelectorAll('tr'), function(tr) {
             var parts = [];
-            Array.prototype.forEach.call(tr.querySelectorAll('input[data-col]'), function(inp) {
+            Array.prototype.forEach.call(tr.querySelectorAll('input[data-colidx]'), function(inp) {
               parts.push(inp.value.trim());
             });
             if (parts.some(function(p) { return p; })) lines.push(parts.join('|'));
@@ -534,7 +584,7 @@
           var tds = '<td data-no style="text-align:center;padding:6px 8px;color:var(--muted);font-size:13px"></td>';
           cols.forEach(function(c, i) {
             tds += '<td style="padding:4px 6px">'
-              + '<input data-col="' + esc(c) + '" value="' + esc(vals[i]||'') + '" />'
+              + '<input data-colidx="' + i + '" value="' + esc(vals[i]||'') + '" />'
               + '</td>';
           });
           tds += '<td style="padding:4px 8px">'

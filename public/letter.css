@@ -74,7 +74,7 @@ html, body {
 .st-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 .st-table th,
@@ -179,7 +179,14 @@ html, body {
 
 .sign {
   margin-top: 40px;
-  text-align: right;
+  text-align: left;
+  width: 42%;
+}
+
+/* Prevent print.css .sep (horizontal-rule utility) from bleeding into letter table cells */
+.letter .sep {
+  border: none;
+  margin: 0;
 }
 
 .sign-space { height: 72px; }
